@@ -43,7 +43,14 @@ const renderItem = (id: string, pool: any[], label: string, theme: any) => {
     if (!item) return null;
     return (
         <div className={`flex items-center gap-4 ${theme.cardBg} border ${theme.cardBorder} p-3 rounded-lg`}>
-            <img src={item.imageSrc} alt="" className={`w-12 h-12 object-contain rounded bg-black/20 ${theme.imgFilter || ''}`} />
+            <div className={`w-12 h-12 flex-shrink-0 rounded bg-black/20 overflow-hidden`}>
+                <div 
+                    className={`w-full h-full bg-center bg-contain bg-no-repeat ${theme.imgFilter || ''}`}
+                    style={{ backgroundImage: `url(${item.imageSrc})` }}
+                    role="img"
+                    aria-label={item.title}
+                />
+            </div>
             <div>
                 <p className={`text-[10px] ${theme.textAccent} ${theme.fontBody} tracking-widest uppercase`}>{label}</p>
                 <p className={`text-sm ${theme.fontHead} font-bold ${theme.textMain} uppercase`}>{item.title}</p>
@@ -66,7 +73,14 @@ const renderGrid = (ids: string[] | Set<string> | Map<string, any>, pool: any[],
                     const count = ids instanceof Map ? ids.get(id) : null;
                     return (
                         <div key={id} className={`flex items-center gap-3 ${theme.cardBg} border ${theme.cardBorder} p-2 rounded`}>
-                            <img src={item.imageSrc} alt="" className={`w-8 h-8 object-contain rounded ${theme.imgFilter || ''}`} />
+                            <div className={`w-8 h-8 flex-shrink-0 rounded overflow-hidden`}>
+                                <div 
+                                    className={`w-full h-full bg-center bg-contain bg-no-repeat ${theme.imgFilter || ''}`}
+                                    style={{ backgroundImage: `url(${item.imageSrc})` }}
+                                    role="img"
+                                    aria-label={item.title}
+                                />
+                            </div>
                             <div className="min-w-0">
                                 <p className={`text-[11px] font-bold ${theme.textMain} truncate ${theme.fontBody}`}>{item.title}</p>
                                 {count && count > 1 && <p className={`text-[9px] ${theme.textAccent} font-mono`}>x{count}</p>}
@@ -235,7 +249,10 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
                                         }}
                                     >
                                         <div className={`w-14 h-14 rounded-full overflow-hidden bg-black shrink-0 ${item.noBorder ? '' : 'border border-purple-500/50'}`}>
-                                            <img src={item.imageSrc} alt="" className="w-full h-full object-cover" />
+                                            <div 
+                                                className="w-full h-full bg-center bg-cover bg-no-repeat"
+                                                style={{ backgroundImage: `url(${item.imageSrc})` }}
+                                            />
                                         </div>
                                         <span className="text-[9px] text-purple-200 text-center font-cinzel mt-1 leading-tight bg-black/70 px-1 rounded backdrop-blur-sm max-w-full z-20">
                                             {item.title}
@@ -259,7 +276,10 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
                                 return (
                                     <div key={idx} className="absolute w-24 flex flex-col items-center -ml-12 -mt-8" style={{ left: `${50 + 50 * Math.cos(angle * Math.PI / 180)}%`, top: `${50 + 50 * Math.sin(angle * Math.PI / 180)}%` }}>
                                         <div className={`w-16 h-16 rounded-full border-2 ${item.isDerived ? 'border-cyan-400' : 'border-purple-400'} bg-black overflow-hidden z-10`}>
-                                            <img src={item.imageSrc} alt="" className="w-full h-full object-cover" />
+                                            <div 
+                                                className="w-full h-full bg-center bg-cover bg-no-repeat"
+                                                style={{ backgroundImage: `url(${item.imageSrc})` }}
+                                            />
                                         </div>
                                         {item.count && item.count > 1 && (
                                             <span className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] font-bold px-1.5 rounded-full border border-black z-20">
@@ -286,7 +306,10 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
                                 return (
                                     <div key={idx} className="absolute w-20 flex flex-col items-center -ml-10 -mt-8" style={{ left: `${50 + 50 * Math.cos(angle * Math.PI / 180)}%`, top: `${50 + 50 * Math.sin(angle * Math.PI / 180)}%` }}>
                                         <div className="w-16 h-16 rounded-full border-2 border-fuchsia-400 bg-black overflow-hidden shadow-[0_0_15px_#d946ef]">
-                                            <img src={item.imageSrc} alt="" className="w-full h-full object-cover" />
+                                             <div 
+                                                className="w-full h-full bg-center bg-cover bg-no-repeat"
+                                                style={{ backgroundImage: `url(${item.imageSrc})` }}
+                                            />
                                         </div>
                                         <span className="text-[10px] text-fuchsia-200 text-center font-cinzel mt-1 leading-tight bg-black/70 px-2 py-0.5 rounded backdrop-blur-sm max-w-full z-20">
                                             {item.title}
@@ -299,9 +322,12 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
 
                     {/* Center */}
                     <div className="relative z-10 w-[25%] h-[25%] rounded-full border-4 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.5)] bg-black overflow-hidden flex items-center justify-center group">
-                        <img src={visualSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        <div 
+                            className="absolute inset-0 w-full h-full bg-center bg-cover bg-no-repeat"
+                            style={{ backgroundImage: `url(${visualSrc})` }}
+                        />
                         
-                        {/* Points Overlay */}
+                        {/* Points Overlay - Kept here for Reference Page as requested */}
                         <div className="absolute bottom-2 px-3 py-1 bg-black/60 rounded-full border border-purple-500/30 backdrop-blur-sm z-20 pointer-events-none">
                             <span className="text-purple-100 font-cinzel font-bold text-xs tracking-widest">{pointsSpent} Points</span>
                         </div>
@@ -411,10 +437,12 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
                 {/* Visual Column */}
                 <div className="col-span-12 md:col-span-4 space-y-6">
                     <div className={`aspect-[9/16] ${theme.cardBg} border-2 ${theme.cardBorder} rounded-lg overflow-hidden relative shadow-lg group`}>
-                        <img 
-                            src={visualSrc} 
-                            alt="" 
-                            className={`w-full h-full object-cover ${theme.imgFilter}`}
+                         {/* Replace img with div background for better html2canvas support */}
+                        <div 
+                            className={`w-full h-full bg-center bg-cover bg-no-repeat ${theme.imgFilter}`}
+                            style={{ backgroundImage: `url(${visualSrc})` }}
+                            role="img"
+                            aria-label="Character Visual"
                         />
                          {onImageUpload && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity z-20">

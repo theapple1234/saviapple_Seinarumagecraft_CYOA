@@ -64,7 +64,12 @@ export const FamilyDetailCard: React.FC<{ member: any, theme: any }> = ({ member
     return (
         <div className={`p-3 rounded-lg border flex items-start gap-4 ${theme.cardBg} ${theme.cardBorder}`}>
             <div className="w-16 h-16 flex-shrink-0 rounded-full overflow-hidden">
-                <img src={member.imageSrc} alt={member.type} className={`w-full h-full object-cover ${theme.imgFilter}`} />
+                <div 
+                    className={`w-full h-full bg-center bg-cover bg-no-repeat ${theme.imgFilter}`}
+                    style={{ backgroundImage: `url(${member.imageSrc})` }}
+                    role="img"
+                    aria-label={member.type}
+                />
             </div>
             <div className="flex-grow min-w-0 flex flex-col justify-center">
                 <p className={`text-sm font-bold ${theme.textMain} mb-1 uppercase tracking-wide`}>
@@ -92,7 +97,14 @@ export const HousingDetailCard: React.FC<{ home: any, theme: any }> = ({ home, t
     return (
         <div className={`p-3 rounded-lg border flex flex-col gap-2 ${theme.cardBg} ${theme.cardBorder}`}>
             <div className="flex items-center gap-3 border-b border-white/10 pb-2">
-                <img src={home.imageSrc} alt="" className={`w-12 h-12 rounded object-cover ${theme.imgFilter}`} />
+                <div className={`w-12 h-12 rounded overflow-hidden`}>
+                     <div 
+                        className={`w-full h-full bg-center bg-cover bg-no-repeat ${theme.imgFilter}`}
+                        style={{ backgroundImage: `url(${home.imageSrc})` }}
+                        role="img"
+                        aria-label="Home Image"
+                    />
+                </div>
                 <div>
                     <p className={`text-xs font-bold ${theme.textMain} truncate`}>{home.title}</p>
                     <p className={`text-[10px] ${theme.textDim} uppercase tracking-wider`}>{home.dominion} • {home.type}</p>
@@ -170,92 +182,6 @@ export const CustomSpellCard: React.FC<{ spell: any, index: number, theme: any }
                     <span>{spell.assignedEntityName}</span>
                 </div>
             )}
-        </div>
-    );
-};
-
-export const renderItem = (id: string, pool: any[], label: string, theme: any) => {
-    const item = pool.find(i => i.id === id);
-    if (!item) return null;
-    return (
-        <div className={`flex items-center gap-4 ${theme.cardBg} border ${theme.cardBorder} p-3 rounded-lg`}>
-            <img src={item.imageSrc} alt="" className={`w-12 h-12 object-contain rounded bg-black/20 ${theme.imgFilter || ''}`} />
-            <div>
-                <p className={`text-[10px] ${theme.textAccent} ${theme.fontBody} tracking-widest uppercase`}>{label}</p>
-                <p className={`text-sm ${theme.fontHead} font-bold ${theme.textMain} uppercase`}>{item.title}</p>
-            </div>
-        </div>
-    );
-};
-
-export const renderGrid = (ids: string[] | Set<string> | Map<string, any>, pool: any[], label: string, theme: any) => {
-    const array = ids instanceof Set ? Array.from(ids) : (ids instanceof Map ? Array.from(ids.keys()) : ids);
-    if (!array || array.length === 0) return null;
-    
-    return (
-        <div className="space-y-2">
-            <h5 className={`font-mono text-[10px] ${theme.textDim} uppercase tracking-[0.3em] mb-2`}>{label}</h5>
-            <div className="grid grid-cols-2 gap-2">
-                {array.map(id => {
-                    const item = pool.find(i => i.id === id);
-                    if (!item) return null;
-                    const count = ids instanceof Map ? ids.get(id) : null;
-                    return (
-                        <div key={id} className={`flex items-center gap-3 ${theme.cardBg} border ${theme.cardBorder} p-2 rounded`}>
-                            <img src={item.imageSrc} alt="" className={`w-8 h-8 object-contain rounded ${theme.imgFilter || ''}`} />
-                            <div className="min-w-0">
-                                <p className={`text-[11px] font-bold ${theme.textMain} truncate ${theme.fontBody}`}>{item.title}</p>
-                                {count && count > 1 && <p className={`text-[9px] ${theme.textAccent} font-mono`}>x{count}</p>}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
-
-const ALL_SPELLS = [
-    ...Constants.ESSENTIAL_BOONS_DATA, ...Constants.MINOR_BOONS_DATA, ...Constants.MAJOR_BOONS_DATA,
-    ...Constants.TELEKINETICS_DATA, ...Constants.METATHERMICS_DATA,
-    ...Constants.ELEANORS_TECHNIQUES_DATA, ...Constants.GENEVIEVES_TECHNIQUES_DATA,
-    ...Constants.BREWING_DATA, ...Constants.SOUL_ALCHEMY_DATA, ...Constants.TRANSFORMATION_DATA,
-    ...Constants.CHANNELLING_DATA, ...Constants.NECROMANCY_DATA, ...Constants.BLACK_MAGIC_DATA,
-    ...Constants.TELEPATHY_DATA, ...Constants.MENTAL_MANIPULATION_DATA,
-    ...Constants.ENTRANCE_DATA, ...Constants.FEATURES_DATA, ...Constants.INFLUENCE_DATA,
-    ...Constants.NET_AVATAR_DATA, ...Constants.TECHNOMANCY_DATA, ...Constants.NANITE_CONTROL_DATA,
-    ...Constants.RIGHTEOUS_CREATION_SPECIALTIES_DATA, ...Constants.RIGHTEOUS_CREATION_MAGITECH_DATA, 
-    ...Constants.RIGHTEOUS_CREATION_ARCANE_CONSTRUCTS_DATA, ...Constants.RIGHTEOUS_CREATION_METAMAGIC_DATA,
-    ...Constants.STAR_CROSSED_LOVE_PACTS_DATA
-];
-
-export const renderSpells = (spellIds: Set<string> | string[], label: string, color: string, theme: any) => {
-    const arr = Array.from(spellIds);
-    if (arr.length === 0) return null;
-    
-    let displayColor = color;
-    let indicatorColor = color.replace('text-', 'bg-');
-    
-    if (theme.isTerminal) {
-        displayColor = 'text-green-400';
-        indicatorColor = 'bg-green-500';
-    }
-
-    return (
-        <div className="space-y-2">
-            <h5 className={`font-mono text-[10px] ${theme.textDim} uppercase tracking-[0.3em] mb-2`}>{label}</h5>
-            <div className="grid grid-cols-2 gap-2">
-                {arr.map(id => {
-                    const spell = ALL_SPELLS.find(s => s.id === id);
-                    if (!spell) return null;
-                    return (
-                        <div key={id} className={`flex items-center gap-2 ${theme.cardBg} border ${theme.cardBorder} p-2 rounded`}>
-                            <div className={`w-1 h-full rounded-full ${indicatorColor}`}></div>
-                            <p className={`text-[10px] font-bold uppercase truncate ${displayColor} ${theme.fontBody}`}>{spell.title}</p>
-                        </div>
-                    );
-                })}
-            </div>
         </div>
     );
 };

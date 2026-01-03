@@ -85,7 +85,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
             <div className="relative flex items-center justify-center scale-[0.35] md:scale-[0.45] lg:scale-[0.55] xl:scale-[0.65] origin-top transition-transform duration-500 mt-60" style={{ minHeight: '2300px' }}>
                 
                 {/* Center Title Circle - Reduced Size */}
-                <div className="absolute z-[100] flex items-center justify-center w-72 h-72 rounded-full drop-shadow-[0_0_50px_rgba(255,255,255,0.4)] bg-black border-4 border-double border-white/20 group">
+                <div className="absolute z-[100] flex items-center justify-center w-72 h-72 rounded-full drop-shadow-[0_0_50px_rgba(255,255,255,0.4)] bg-black border-4 border-double border-white/20 group overflow-hidden">
                      {onImageUpload && (
                         <>
                             <input 
@@ -100,10 +100,9 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                             </div>
                         </>
                     )}
-                     <img 
-                        src={visualSrc || "/images/Z6tHPxPB-symbol-transparent.png"} 
-                        alt="Seinaru Symbol" 
-                        className="w-full h-full object-cover rounded-full drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]"
+                     <div 
+                        className="w-full h-full bg-center bg-cover bg-no-repeat"
+                        style={{ backgroundImage: `url(${visualSrc || "/images/Z6tHPxPB-symbol-transparent.png"})` }}
                      />
                 </div>
 
@@ -177,7 +176,10 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                         >
                                             <div className="relative">
                                                 <div className={`w-24 h-24 rounded-full border-2 ${borderClass} overflow-hidden bg-black group-hover:scale-110 group-hover:z-50 transition-all duration-300 relative z-10`}>
-                                                    <img src={imageSrc} alt={item.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100" />
+                                                    <div 
+                                                        className="w-full h-full opacity-80 group-hover:opacity-100 bg-center bg-cover bg-no-repeat"
+                                                        style={{ backgroundImage: `url(${imageSrc})` }}
+                                                    />
                                                 </div>
                                                 {item.count && item.count > 1 && (
                                                     <span className="absolute -bottom-1 -right-1 z-50 bg-purple-600 text-white text-[12px] font-bold px-2 py-0.5 rounded-full border-2 border-black shadow-md">x{item.count}</span>
@@ -198,13 +200,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                         );
                     })}
 
-                    {/* Center */}
-                    <div className="absolute z-10 w-[600px] h-[600px] rounded-full border-4 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.5)] bg-black/10 overflow-hidden flex items-center justify-center group pointer-events-none">
-                         {/* Points Overlay */}
-                        <div className="absolute bottom-10 px-6 py-2 bg-black/60 rounded-full border border-purple-500/30 backdrop-blur-sm z-20 pointer-events-none">
-                            <span className="text-purple-100 font-cinzel font-bold text-xl tracking-widest">{pointsSpent} Points</span>
-                        </div>
-                    </div>
+                    {/* Removed the Points overlay circle as requested */}
                 </div>
             </div>
             
