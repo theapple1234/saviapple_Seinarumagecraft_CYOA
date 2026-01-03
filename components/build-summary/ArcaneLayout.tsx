@@ -58,11 +58,13 @@ export const ArcaneLayout: React.FC<{ sections: any[] }> = ({ sections }) => {
             {sections.map(section => (
                 <div key={section.id} className="animate-fade-in-up">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="h-px bg-gradient-to-r from-transparent to-cyan-500/50 flex-grow"></div>
+                        {/* Added min-w-[50px] to prevent 0-width collapse which crashes html2canvas createPattern */}
+                        <div className="h-px bg-gradient-to-r from-transparent to-cyan-500/50 flex-grow min-w-[50px]"></div>
                         <h3 className="font-cinzel text-2xl text-center tracking-[0.2em] text-cyan-200 uppercase whitespace-nowrap drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]">
                             {section.title}
                         </h3>
-                        <div className="h-px bg-gradient-to-l from-transparent to-cyan-500/50 flex-grow"></div>
+                        {/* Added min-w-[50px] to prevent 0-width collapse which crashes html2canvas createPattern */}
+                        <div className="h-px bg-gradient-to-l from-transparent to-cyan-500/50 flex-grow min-w-[50px]"></div>
                     </div>
                     
                     {/* Family & Housing Special Render for Stage 1 */}
