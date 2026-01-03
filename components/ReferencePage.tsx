@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { toPng } from 'html-to-image';
 import { useCharacterContext } from '../context/CharacterContext';
 import { CompanionSection } from './reference/CompanionSection';
 import { WeaponSection } from './reference/WeaponSection';
@@ -15,6 +15,13 @@ import type {
     AllBuilds, 
     SavedBuildData 
 } from '../types';
+
+// Add type declaration for html2canvas from CDN
+declare global {
+  interface Window {
+    html2canvas: any;
+  }
+}
 
 const STORAGE_KEY = 'seinaru_magecraft_builds';
 
@@ -317,34 +324,22 @@ export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     };
 
     const handleDownloadImage = async () => {
-        if (!summaryRef.current) {
+        if (!summaryRef.current || !window.html2canvas) {
             alert('Image generation feature is not ready. Please try again in a moment.');
             return;
         }
 
         try {
-            await document.fonts.ready;
             const bgColor = template === 'temple' ? '#f8f5f2' : '#000000';
-            
-            // Calculate scale and width similar to BuildSummaryPage logic
-            const element = summaryRef.current;
-            const captureWidth = Math.max(element.scrollWidth, 900); // Ensure minimal width for mobile
-
-            const dataUrl = await toPng(element, {
-                cacheBust: true,
-                backgroundColor: bgColor,
-                width: captureWidth,
-                height: element.scrollHeight,
-                style: {
-                    overflow: 'visible',
-                    height: 'auto',
-                    transform: 'none'
-                }
+            const canvas = await window.html2canvas(summaryRef.current, {
+                backgroundColor: bgColor, 
+                useCORS: true,
+                scale: 2,
             });
             
             const link = document.createElement('a');
             link.download = `seinaru-build-${template}-${currentName || 'Untitled'}.png`;
-            link.href = dataUrl;
+            link.href = canvas.toDataURL('image/png');
             link.click();
         } catch (error) {
             console.error("Error generating build image:", error);

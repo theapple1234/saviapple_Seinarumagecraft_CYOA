@@ -1,5 +1,5 @@
+
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { toPng } from 'html-to-image';
 import { useCharacterContext } from '../context/CharacterContext';
 import * as Constants from '../constants';
 import { useBuildSummaryData } from '../hooks/useBuildSummaryData';
@@ -13,6 +13,13 @@ import type { AllBuilds, BuildType } from '../types';
 
 type TemplateType = 'default' | 'temple' | 'vortex' | 'terminal';
 const STORAGE_KEY = 'seinaru_magecraft_builds';
+
+// Add type declaration for html2canvas from CDN
+declare global {
+  interface Window {
+    html2canvas: any;
+  }
+}
 
 // -- Helper: Quick Point Calculation for Reference Items --
 const calculateReferencePoints = (type: BuildType, data: any): number => {
@@ -161,15 +168,15 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
     const pointsSpent = 100 - ctx.blessingPoints; 
     const isSunForgerActive = ctx.selectedStarCrossedLovePacts.has('sun_forgers_boon');
 
-    const downloadDataUrl = (dataUrl: string, filename: string) => {
+    const downloadImage = (canvas: HTMLCanvasElement, filename: string) => {
         const link = document.createElement('a');
         link.download = filename;
-        link.href = dataUrl;
+        link.href = canvas.toDataURL('image/png');
         link.click();
     };
 
     const handleDownload = async (includeReference: boolean) => {
-        if (!summaryContentRef.current) {
+        if (!summaryContentRef.current || !window.html2canvas) {
             alert('Image generation feature is not ready. Please try again in a moment.');
             return;
         }
@@ -192,26 +199,53 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             
             const element = summaryContentRef.current;
             
-            // Calculate a sufficiently wide viewport to prevent text wrapping
+            // Calculate a sufficiently wide viewport to prevent text wrapping if font fallback occurs
             const captureWidth = Math.max(element.scrollWidth, 1600); 
-            // Fix for Vortex Layout needing extra space and specific width
-            const targetWidth = template === 'vortex' ? 2600 : captureWidth;
 
-            // Use html-to-image
-            const mainDataUrl = await toPng(element, {
-                cacheBust: true,
-                backgroundColor: bgColor,
-                width: targetWidth,
-                height: element.scrollHeight, // Force full height capture
-                style: {
-                    overflow: 'visible', // Ensure scrolling content is visible
-                    maxHeight: 'none',
-                    height: 'auto',
-                    transform: 'none' // Remove scaling transforms that might interfere
+            const options: any = {
+                backgroundColor: bgColor, 
+                useCORS: true,
+                scale: 2,
+                logging: false,
+                // Do NOT set height or windowHeight. Let html2canvas calculate height automatically based on content.
+                windowWidth: captureWidth, 
+                onclone: (clonedDoc: Document) => {
+                    const clonedElement = clonedDoc.querySelector('[data-capture-target]') as HTMLElement;
+                    if (clonedElement) {
+                        // Ensure container can expand freely
+                        clonedElement.style.overflow = 'visible';
+                        clonedElement.style.height = 'auto';
+                        clonedElement.style.maxHeight = 'none';
+                        clonedElement.style.minHeight = '100%';
+                        clonedElement.style.width = `${captureWidth}px`;
+                    }
+                    
+                    // Force background color on body to prevent transparency artifacts
+                    const clonedBody = clonedDoc.body;
+                    clonedBody.style.backgroundColor = bgColor;
+                    clonedBody.style.width = `${captureWidth}px`;
+
+                    // FIX: Remove complex gradients for Arcane/Vortex to prevent createPattern usage/issues
+                    // This forces html2canvas to rely on the solid bgColor instead of trying to rasterize the gradient
+                    if (template === 'default') {
+                        const arcaneGradient = clonedDoc.getElementById('arcane-bg-gradient');
+                        if (arcaneGradient) arcaneGradient.remove();
+                    }
+                    if (template === 'vortex') {
+                        const vortexGradient = clonedDoc.getElementById('vortex-bg-gradient');
+                        if (vortexGradient) vortexGradient.remove();
+                    }
                 }
-            });
+            };
+
+            // Fix for Vortex Layout needing extra space and specific width
+            if (template === 'vortex') {
+                options.windowWidth = 2600;
+            }
+
+            const mainCanvas = await window.html2canvas(element, options);
             
-            downloadDataUrl(mainDataUrl, `seinaru-build-${template}-${timestamp}.png`);
+            downloadImage(mainCanvas, `seinaru-build-${template}-${timestamp}.png`);
 
             // 2. Capture References if requested
             if (includeReference) {
@@ -233,23 +267,28 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                              
                              // Calculate dimensions for reference card
                              const rect = item.getBoundingClientRect();
-                             const refWidth = Math.max(rect.width, 900); // Ensure minimal width
+                             const refWidth = Math.max(rect.width, 900); // Ensure width
                              
-                             const refDataUrl = await toPng(item, {
-                                 cacheBust: true,
+                             const refCanvas = await window.html2canvas(item, {
                                  backgroundColor: bgColor,
-                                 width: refWidth,
-                                 height: item.scrollHeight,
-                                 style: {
-                                    overflow: 'visible',
-                                    height: 'auto'
+                                 useCORS: true,
+                                 scale: 2,
+                                 logging: false,
+                                 windowWidth: refWidth,
+                                 onclone: (clonedDoc: Document) => {
+                                     // Similar expansion logic for reference cards
+                                     const clonedNode = clonedDoc.querySelector(`[data-name="${name}"]`) as HTMLElement;
+                                     if (clonedNode) {
+                                        clonedNode.style.height = 'auto';
+                                        clonedNode.style.overflow = 'visible';
+                                     }
                                  }
                              });
                              
-                             downloadDataUrl(refDataUrl, `seinaru-${type}-${name}-${template}.png`);
+                             downloadImage(refCanvas, `seinaru-${type}-${name}-${template}.png`);
                              
-                             // Add small delay to prevent browser throttling downloads
-                             await new Promise(r => setTimeout(r, 500));
+                             // Add delay between downloads
+                             await new Promise(r => setTimeout(r, 300));
                          }
                     }
                     
@@ -281,14 +320,11 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             reference: JSON.parse(refBuilds),
             version: '1.0'
         };
-        const dbRequest = indexedDB.open('SeinaruMagecraftFullSaves', 2);
+        const dbRequest = indexedDB.open('SeinaruMagecraftFullSaves', 1);
         dbRequest.onupgradeneeded = (event) => {
             const db = (event.target as IDBOpenDBRequest).result;
             if (!db.objectStoreNames.contains('saves')) {
                 db.createObjectStore('saves', { keyPath: 'name' });
-            }
-             if (!db.objectStoreNames.contains('save_slots')) {
-                db.createObjectStore('save_slots', { keyPath: 'id' });
             }
         };
         dbRequest.onsuccess = (event) => {
@@ -374,7 +410,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                             {template === 'default' && (
                                 <div className="p-8 bg-[#0a0f1e] min-h-full relative overflow-hidden">
                                     {/* Using a cleaner gradient instead of blur to avoid render issues */}
-                                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(22,78,99,0.3)_0%,transparent_70%)] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+                                    <div id="arcane-bg-gradient" className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(22,78,99,0.3)_0%,transparent_70%)] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
                                     <ArcaneLayout sections={sections} />
                                 </div>
                             )}
