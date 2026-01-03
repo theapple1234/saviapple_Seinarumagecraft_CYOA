@@ -48,19 +48,7 @@ export const TerminalLayout: React.FC<{ sections: any[] }> = ({ sections }) => {
     return (
         <div className="bg-black p-8 font-mono text-green-500 space-y-12 border-x-4 border-green-900/30 min-h-screen relative">
             <SummaryHeader theme="cyber" />
-            
-            {/* Replaced CSS Gradient background with SVG Pattern for html2canvas compatibility */}
-            <div className="absolute inset-0 pointer-events-none opacity-20">
-                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <pattern id="terminal-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                            <rect width="20" height="20" fill="transparent"/>
-                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0, 255, 0, 0.3)" strokeWidth="1"/>
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#terminal-grid)" />
-                </svg>
-            </div>
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
 
             {sections.map((section, sIdx) => (
                 <div key={section.id}>

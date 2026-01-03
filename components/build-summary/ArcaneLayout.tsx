@@ -123,9 +123,6 @@ export const ArcaneLayout: React.FC<{ sections: any[] }> = ({ sections }) => {
                     )}
                 </div>
             ))}
-
-            {/* Decorative Background Element - Explicitly NO REPEAT to fix html2canvas crash */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(22,78,99,0.3)_0%,transparent_70%)] bg-no-repeat pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
         </div>
     );
 };

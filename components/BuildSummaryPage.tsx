@@ -1,5 +1,5 @@
-
 import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { toPng } from 'html-to-image';
 import { useCharacterContext } from '../context/CharacterContext';
 import * as Constants from '../constants';
 import { useBuildSummaryData } from '../hooks/useBuildSummaryData';
@@ -13,13 +13,6 @@ import type { AllBuilds, BuildType } from '../types';
 
 type TemplateType = 'default' | 'temple' | 'vortex' | 'terminal';
 const STORAGE_KEY = 'seinaru_magecraft_builds';
-
-// Add type declaration for html2canvas from CDN
-declare global {
-  interface Window {
-    html2canvas: any;
-  }
-}
 
 // -- Helper: Quick Point Calculation for Reference Items --
 const calculateReferencePoints = (type: BuildType, data: any): number => {
@@ -168,15 +161,15 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
     const pointsSpent = 100 - ctx.blessingPoints; 
     const isSunForgerActive = ctx.selectedStarCrossedLovePacts.has('sun_forgers_boon');
 
-    const downloadImage = (canvas: HTMLCanvasElement, filename: string) => {
+    const downloadDataUrl = (dataUrl: string, filename: string) => {
         const link = document.createElement('a');
         link.download = filename;
-        link.href = canvas.toDataURL('image/png');
+        link.href = dataUrl;
         link.click();
     };
 
     const handleDownload = async (includeReference: boolean) => {
-        if (!summaryContentRef.current || !window.html2canvas) {
+        if (!summaryContentRef.current) {
             alert('Image generation feature is not ready. Please try again in a moment.');
             return;
         }
@@ -199,42 +192,26 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             
             const element = summaryContentRef.current;
             
-            // Calculate a sufficiently wide viewport to prevent text wrapping if font fallback occurs
+            // Calculate a sufficiently wide viewport to prevent text wrapping
             const captureWidth = Math.max(element.scrollWidth, 1600); 
-
-            const options: any = {
-                backgroundColor: bgColor, 
-                useCORS: true,
-                scale: 2,
-                logging: false,
-                // Do NOT set height or windowHeight. Let html2canvas calculate height automatically based on content.
-                windowWidth: captureWidth, 
-                onclone: (clonedDoc: Document) => {
-                    const clonedElement = clonedDoc.querySelector('[data-capture-target]') as HTMLElement;
-                    if (clonedElement) {
-                        // Ensure container can expand freely
-                        clonedElement.style.overflow = 'visible';
-                        clonedElement.style.height = 'auto';
-                        clonedElement.style.maxHeight = 'none';
-                        clonedElement.style.minHeight = '100%';
-                        clonedElement.style.width = `${captureWidth}px`;
-                    }
-                    
-                    // Force background color on body to prevent transparency artifacts
-                    const clonedBody = clonedDoc.body;
-                    clonedBody.style.backgroundColor = bgColor;
-                    clonedBody.style.width = `${captureWidth}px`;
-                }
-            };
-
             // Fix for Vortex Layout needing extra space and specific width
-            if (template === 'vortex') {
-                options.windowWidth = 2600;
-            }
+            const targetWidth = template === 'vortex' ? 2600 : captureWidth;
 
-            const mainCanvas = await window.html2canvas(element, options);
+            // Use html-to-image
+            const mainDataUrl = await toPng(element, {
+                cacheBust: true,
+                backgroundColor: bgColor,
+                width: targetWidth,
+                height: element.scrollHeight, // Force full height capture
+                style: {
+                    overflow: 'visible', // Ensure scrolling content is visible
+                    maxHeight: 'none',
+                    height: 'auto',
+                    transform: 'none' // Remove scaling transforms that might interfere
+                }
+            });
             
-            downloadImage(mainCanvas, `seinaru-build-${template}-${timestamp}.png`);
+            downloadDataUrl(mainDataUrl, `seinaru-build-${template}-${timestamp}.png`);
 
             // 2. Capture References if requested
             if (includeReference) {
@@ -256,28 +233,23 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                              
                              // Calculate dimensions for reference card
                              const rect = item.getBoundingClientRect();
-                             const refWidth = Math.max(rect.width, 900); // Ensure width
+                             const refWidth = Math.max(rect.width, 900); // Ensure minimal width
                              
-                             const refCanvas = await window.html2canvas(item, {
+                             const refDataUrl = await toPng(item, {
+                                 cacheBust: true,
                                  backgroundColor: bgColor,
-                                 useCORS: true,
-                                 scale: 2,
-                                 logging: false,
-                                 windowWidth: refWidth,
-                                 onclone: (clonedDoc: Document) => {
-                                     // Similar expansion logic for reference cards
-                                     const clonedNode = clonedDoc.querySelector(`[data-name="${name}"]`) as HTMLElement;
-                                     if (clonedNode) {
-                                        clonedNode.style.height = 'auto';
-                                        clonedNode.style.overflow = 'visible';
-                                     }
+                                 width: refWidth,
+                                 height: item.scrollHeight,
+                                 style: {
+                                    overflow: 'visible',
+                                    height: 'auto'
                                  }
                              });
                              
-                             downloadImage(refCanvas, `seinaru-${type}-${name}-${template}.png`);
+                             downloadDataUrl(refDataUrl, `seinaru-${type}-${name}-${template}.png`);
                              
-                             // Add delay between downloads
-                             await new Promise(r => setTimeout(r, 300));
+                             // Add small delay to prevent browser throttling downloads
+                             await new Promise(r => setTimeout(r, 500));
                          }
                     }
                     
@@ -309,11 +281,14 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             reference: JSON.parse(refBuilds),
             version: '1.0'
         };
-        const dbRequest = indexedDB.open('SeinaruMagecraftFullSaves', 1);
+        const dbRequest = indexedDB.open('SeinaruMagecraftFullSaves', 2);
         dbRequest.onupgradeneeded = (event) => {
             const db = (event.target as IDBOpenDBRequest).result;
             if (!db.objectStoreNames.contains('saves')) {
                 db.createObjectStore('saves', { keyPath: 'name' });
+            }
+             if (!db.objectStoreNames.contains('save_slots')) {
+                db.createObjectStore('save_slots', { keyPath: 'id' });
             }
         };
         dbRequest.onsuccess = (event) => {
