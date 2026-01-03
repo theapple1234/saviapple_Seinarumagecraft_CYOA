@@ -20,10 +20,12 @@ export const ArcaneLayout: React.FC<{ sections: any[] }> = ({ sections }) => {
             {items.map((item: any, idx: number) => (
                 <div key={`${item.id}-${idx}`} className="bg-slate-900/60 border border-slate-700/50 hover:border-cyan-500/40 rounded-lg overflow-hidden group transition-all flex flex-col relative">
                     <div className="relative w-full aspect-square overflow-hidden border-b border-white/5 bg-black/40">
-                        <img 
-                            src={item.imageSrc} 
-                            alt={item.title} 
-                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110"
+                        {/* Changed from img to div with background-image to force crop/cover behavior properly */}
+                        <div 
+                            className="w-full h-full opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110 bg-center bg-cover bg-no-repeat"
+                            style={{ backgroundImage: `url(${item.imageSrc})` }}
+                            role="img"
+                            aria-label={item.title}
                         />
                         {item.count && item.count > 1 && (
                             <div className="absolute top-1 right-1 bg-black/90 text-cyan-300 font-mono text-[9px] px-1.5 py-0.5 rounded border border-cyan-500/30">

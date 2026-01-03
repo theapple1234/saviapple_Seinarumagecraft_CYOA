@@ -147,46 +147,50 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 await new Promise(resolve => setTimeout(resolve, 300)); // Allow DOM update
             }
             
-            // Wait for images to be potentially ready
-            await document.fonts.ready;
+            // Wait for fonts to be ready
+            try {
+                await document.fonts.ready;
+            } catch (e) {
+                // Ignore font loading errors
+            }
 
             const element = summaryContentRef.current;
             
-            // Calculate dimensions explicitly to prevent layout shifts
-            // We force a minimum width to ensure the layout looks like desktop (prevent text wrapping)
-            const captureWidth = Math.max(element.scrollWidth, 1440); 
-            const captureHeight = element.scrollHeight;
+            // Calculate a sufficiently wide viewport to prevent text wrapping if font fallback occurs
+            const captureWidth = Math.max(element.scrollWidth, 1600); 
 
             const options: any = {
                 backgroundColor: bgColor, 
                 useCORS: true,
                 scale: 2,
                 logging: false,
-                width: captureWidth,
-                height: captureHeight,
-                windowWidth: captureWidth, // Force desktop layout
-                windowHeight: captureHeight,
+                // Do NOT set height or windowHeight. Let html2canvas calculate height automatically based on content.
+                // This prevents cutting off the bottom if text wraps and increases total height.
+                windowWidth: captureWidth, 
                 onclone: (clonedDoc: Document) => {
-                    // Ensure the cloned element handles overflow correctly
                     const clonedElement = clonedDoc.querySelector('[data-capture-target]') as HTMLElement;
                     if (clonedElement) {
+                        // Ensure container can expand freely
                         clonedElement.style.overflow = 'visible';
                         clonedElement.style.height = 'auto';
                         clonedElement.style.maxHeight = 'none';
+                        clonedElement.style.minHeight = '100%';
+                        
+                        // Force desktop-like width constraints on children if needed
+                        clonedElement.style.width = `${captureWidth}px`;
                     }
                     
-                    // Force background color on body/container to prevent transparency issues
+                    // Force background color on body to prevent transparency artifacts
                     const clonedBody = clonedDoc.body;
                     clonedBody.style.backgroundColor = bgColor;
+                    clonedBody.style.width = `${captureWidth}px`;
                 }
             };
 
-            // Fix for Vortex Layout needing extra space
+            // Fix for Vortex Layout needing extra space and specific width
             if (template === 'vortex') {
-                options.width = 2600;
                 options.windowWidth = 2600;
-                // Vortex often extends far down, ensure height catches it
-                options.height = Math.max(captureHeight, 4000); 
+                // Vortex needs plenty of height space, but auto-height usually works better than fixed
             }
 
             const mainCanvas = await window.html2canvas(element, options);
@@ -212,17 +216,22 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                              
                              // Calculate dimensions for reference card
                              const rect = item.getBoundingClientRect();
-                             const refWidth = Math.max(rect.width, 800);
+                             const refWidth = Math.max(rect.width, 900); // Ensure width
                              
                              const refCanvas = await window.html2canvas(item, {
                                  backgroundColor: bgColor,
                                  useCORS: true,
                                  scale: 2,
                                  logging: false,
-                                 width: refWidth,
                                  windowWidth: refWidth,
-                                 height: item.scrollHeight,
-                                 windowHeight: item.scrollHeight
+                                 onclone: (clonedDoc: Document) => {
+                                     // Similar expansion logic for reference cards
+                                     const clonedNode = clonedDoc.querySelector(`[data-name="${name}"]`) as HTMLElement;
+                                     if (clonedNode) {
+                                        clonedNode.style.height = 'auto';
+                                        clonedNode.style.overflow = 'visible';
+                                     }
+                                 }
                              });
                              
                              downloadImage(refCanvas, `seinaru-${type}-${name}-${template}.png`);
@@ -241,7 +250,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
 
         } catch (error) {
             console.error("Error generating images:", error);
-            alert("Error generating images. Please try a different browser if this persists.");
+            alert("Error generating images. The fonts might be loading slowly, please try again.");
             setShowReferenceAppendix(false);
         }
     };

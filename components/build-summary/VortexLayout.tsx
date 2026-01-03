@@ -107,89 +107,105 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                      />
                 </div>
 
-                {ringsConfig.map((config, ringIndex) => {
-                    const ringItems = getRingItems(config);
-
-                    if (ringItems.length === 0) return null;
-
-                    const itemCount = ringItems.length;
+                {/* Using fixed dimensions instead of w-full aspect-square to prevent collapse in html2canvas */}
+                <div className="relative w-[2400px] h-[2400px] flex items-center justify-center p-10 font-cinzel text-white">
+                    {/* Background Circle - Clipped for Gradient */}
+                    <div className="absolute inset-0 rounded-full bg-black overflow-hidden pointer-events-none">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(76,29,149,0.3),transparent_70%)]"></div>
+                    </div>
                     
-                    let gapSize = 30;
-                    if (ringIndex === 0) gapSize = 150; 
-                    else if (ringIndex === 1) gapSize = 45; 
+                    {ringsConfig.map((config, ringIndex) => {
+                        const ringItems = getRingItems(config);
 
-                    let startAngle = -90 + (gapSize / 2); 
-                    let availableArc = 360 - gapSize;
-                    const zIndex = 60 - ringIndex;
+                        if (ringItems.length === 0) return null;
 
-                    return (
-                        <div key={ringIndex} className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex }}>
-                            <div className="absolute rounded-full border border-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.15)]" style={{ width: config.radius * 2, height: config.radius * 2 }}></div>
+                        const itemCount = ringItems.length;
+                        
+                        let gapSize = 30;
+                        if (ringIndex === 0) gapSize = 150; 
+                        else if (ringIndex === 1) gapSize = 45; 
 
-                            <div className="absolute text-purple-400 font-cinzel font-bold tracking-[0.1em] uppercase bg-black rounded-full border-2 border-purple-900/80 z-[100] text-center flex flex-col items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.3)]"
-                                style={{ transform: `translateY(-${config.radius}px)`, width: '180px', height: '180px' }}>
-                                <div className="flex flex-col items-center justify-center leading-none">
-                                    <span className="text-lg opacity-80 mb-2">STAGE</span>
-                                    <span className={`${config.stageIndices.length > 1 ? 'text-5xl' : 'text-7xl'}`}>
-                                        {config.stageIndices.map(i => i + 1).join(' & ')}
-                                    </span>
-                                </div>
-                            </div>
+                        let startAngle = -90 + (gapSize / 2); 
+                        let availableArc = 360 - gapSize;
+                        const zIndex = 60 - ringIndex;
 
-                            {ringItems.map((item: any, idx: number) => {
-                                const step = itemCount > 1 ? availableArc / (itemCount - 1) : 0;
-                                const angleDeg = itemCount === 1 ? 90 : startAngle + (step * idx);
-                                const angleRad = (angleDeg * Math.PI) / 180;
-                                
-                                const x = Math.cos(angleRad) * config.radius;
-                                const y = Math.sin(angleRad) * config.radius;
+                        return (
+                            <div key={ringIndex} className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex }}>
+                                <div className="absolute rounded-full border border-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.15)]" style={{ width: config.radius * 2, height: config.radius * 2 }}></div>
 
-                                const isHouseUpgrade = Constants.HOUSE_UPGRADES_DATA.some(u => u.id === item.id);
-                                const isMagicalStyle = Constants.MAGICAL_STYLES_DATA.some(s => s.id === item.id);
-                                const noBorder = isHouseUpgrade || isMagicalStyle || noBorderIds.includes(item.id);
-                                
-                                const imageSrc = item.imageSrc;
-                                
-                                // Glowing Effect Logic
-                                let borderClass = 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]';
-                                
-                                if (item.isLostPower) {
-                                    borderClass = 'border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.8)]';
-                                } else if (item.isBoosted) {
-                                    // Golden Glow for Boosted Items
-                                    borderClass = 'border-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.8)] ring-2 ring-amber-500/50';
-                                } else if (noBorder) {
-                                    borderClass = 'border-transparent';
-                                }
-
-                                return (
-                                    <div 
-                                        key={`${ringIndex}-${idx}`}
-                                        className="absolute pointer-events-auto group flex flex-col items-center justify-center w-32"
-                                        style={{ transform: `translate(${x}px, ${y}px)` }}
-                                    >
-                                        <div className="relative">
-                                            <div className={`w-24 h-24 rounded-full border-2 ${borderClass} overflow-hidden bg-black group-hover:scale-110 group-hover:z-50 transition-all duration-300 relative z-10`}>
-                                                <img src={imageSrc} alt={item.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100" />
-                                            </div>
-                                            {item.count && item.count > 1 && (
-                                                <span className="absolute -bottom-1 -right-1 z-50 bg-purple-600 text-white text-[12px] font-bold px-2 py-0.5 rounded-full border-2 border-black shadow-md">x{item.count}</span>
-                                            )}
-                                        </div>
-                                        <div className="mt-3 bg-black/90 px-2 py-1 rounded border border-purple-900/50 text-[10px] text-purple-200 text-center w-40 whitespace-normal leading-tight group-hover:text-white transition-colors shadow-lg z-20 min-h-[2.5em] flex flex-col items-center justify-center">
-                                            <span>{item.title}</span>
-                                            {item.isBoosted && (
-                                                <span className="text-[9px] text-amber-400 font-bold block mt-0.5 w-full whitespace-normal">BOOSTED</span>
-                                            )}
-                                            {item.assignedName && <span className="text-[9px] text-cyan-300 font-bold block mt-0.5 w-full whitespace-normal">[{item.assignedName}]</span>}
-                                            {item.uniformName && <span className="text-[9px] text-pink-300 font-bold block mt-0.5 w-full whitespace-normal">Costume: {item.uniformName}</span>}
-                                        </div>
+                                <div className="absolute text-purple-400 font-cinzel font-bold tracking-[0.1em] uppercase bg-black rounded-full border-2 border-purple-900/80 z-[100] text-center flex flex-col items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                                    style={{ transform: `translateY(-${config.radius}px)`, width: '180px', height: '180px' }}>
+                                    <div className="flex flex-col items-center justify-center leading-none">
+                                        <span className="text-lg opacity-80 mb-2">STAGE</span>
+                                        <span className={`${config.stageIndices.length > 1 ? 'text-5xl' : 'text-7xl'}`}>
+                                            {config.stageIndices.map(i => i + 1).join(' & ')}
+                                        </span>
                                     </div>
-                                );
-                            })}
+                                </div>
+
+                                {ringItems.map((item: any, idx: number) => {
+                                    const step = itemCount > 1 ? availableArc / (itemCount - 1) : 0;
+                                    const angleDeg = itemCount === 1 ? 90 : startAngle + (step * idx);
+                                    const angleRad = (angleDeg * Math.PI) / 180;
+                                    
+                                    const x = Math.cos(angleRad) * config.radius;
+                                    const y = Math.sin(angleRad) * config.radius;
+
+                                    const isHouseUpgrade = Constants.HOUSE_UPGRADES_DATA.some(u => u.id === item.id);
+                                    const isMagicalStyle = Constants.MAGICAL_STYLES_DATA.some(s => s.id === item.id);
+                                    const noBorder = isHouseUpgrade || isMagicalStyle || noBorderIds.includes(item.id);
+                                    
+                                    const imageSrc = item.imageSrc;
+                                    
+                                    // Glowing Effect Logic
+                                    let borderClass = 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]';
+                                    
+                                    if (item.isLostPower) {
+                                        borderClass = 'border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.8)]';
+                                    } else if (item.isBoosted) {
+                                        // Golden Glow for Boosted Items
+                                        borderClass = 'border-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.8)] ring-2 ring-amber-500/50';
+                                    } else if (noBorder) {
+                                        borderClass = 'border-transparent';
+                                    }
+
+                                    return (
+                                        <div 
+                                            key={`${ringIndex}-${idx}`}
+                                            className="absolute pointer-events-auto group flex flex-col items-center justify-center w-32"
+                                            style={{ transform: `translate(${x}px, ${y}px)` }}
+                                        >
+                                            <div className="relative">
+                                                <div className={`w-24 h-24 rounded-full border-2 ${borderClass} overflow-hidden bg-black group-hover:scale-110 group-hover:z-50 transition-all duration-300 relative z-10`}>
+                                                    <img src={imageSrc} alt={item.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100" />
+                                                </div>
+                                                {item.count && item.count > 1 && (
+                                                    <span className="absolute -bottom-1 -right-1 z-50 bg-purple-600 text-white text-[12px] font-bold px-2 py-0.5 rounded-full border-2 border-black shadow-md">x{item.count}</span>
+                                                )}
+                                            </div>
+                                            <div className="mt-3 bg-black/90 px-2 py-1 rounded border border-purple-900/50 text-[10px] text-purple-200 text-center w-40 whitespace-normal leading-tight group-hover:text-white transition-colors shadow-lg z-20 min-h-[2.5em] flex flex-col items-center justify-center">
+                                                <span>{item.title}</span>
+                                                {item.isBoosted && (
+                                                    <span className="text-[9px] text-amber-400 font-bold block mt-0.5 w-full whitespace-normal">BOOSTED</span>
+                                                )}
+                                                {item.assignedName && <span className="text-[9px] text-cyan-300 font-bold block mt-0.5 w-full whitespace-normal">[{item.assignedName}]</span>}
+                                                {item.uniformName && <span className="text-[9px] text-pink-300 font-bold block mt-0.5 w-full whitespace-normal">Costume: {item.uniformName}</span>}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
+
+                    {/* Center */}
+                    <div className="absolute z-10 w-[600px] h-[600px] rounded-full border-4 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.5)] bg-black/10 overflow-hidden flex items-center justify-center group pointer-events-none">
+                         {/* Points Overlay */}
+                        <div className="absolute bottom-10 px-6 py-2 bg-black/60 rounded-full border border-purple-500/30 backdrop-blur-sm z-20 pointer-events-none">
+                            <span className="text-purple-100 font-cinzel font-bold text-xl tracking-widest">{pointsSpent} Points</span>
                         </div>
-                    );
-                })}
+                    </div>
+                </div>
             </div>
             
             {/* Life & Assets Section */}
