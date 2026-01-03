@@ -335,15 +335,18 @@ export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 backgroundColor: bgColor, 
                 useCORS: true,
                 scale: 2,
-                onclone: (clonedDoc: Document) => {
-                     // FIX: Remove broken stylesheets to prevent html2canvas 404 errors (specifically index.css)
-                    const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
-                    links.forEach(link => {
-                        const href = link.getAttribute('href');
+                // CRITICAL FIX: Ignore broken stylesheets to ensure fonts load correctly and prevent 404 errors
+                ignoreElements: (element: Element) => {
+                    if (element.tagName === 'LINK') {
+                        const href = element.getAttribute('href');
                         if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
-                            link.remove();
+                            return true;
                         }
-                    });
+                    }
+                    return false;
+                },
+                onclone: (clonedDoc: Document) => {
+                     // Additional cleanup if needed
                 }
             });
             

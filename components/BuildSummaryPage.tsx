@@ -167,6 +167,16 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 // Do NOT set height or windowHeight. Let html2canvas calculate height automatically based on content.
                 // This prevents cutting off the bottom if text wraps and increases total height.
                 windowWidth: captureWidth, 
+                // CRITICAL FIX: Ignore problematic stylesheets (like index.css) to prevent 404 errors during capture
+                ignoreElements: (element: Element) => {
+                    if (element.tagName === 'LINK') {
+                        const href = element.getAttribute('href');
+                        if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
+                            return true;
+                        }
+                    }
+                    return false;
+                },
                 onclone: (clonedDoc: Document) => {
                     const clonedElement = clonedDoc.querySelector('[data-capture-target]') as HTMLElement;
                     if (clonedElement) {
@@ -184,15 +194,6 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                     const clonedBody = clonedDoc.body;
                     clonedBody.style.backgroundColor = bgColor;
                     clonedBody.style.width = `${captureWidth}px`;
-
-                    // FIX: Remove broken stylesheets to prevent html2canvas 404 errors (specifically index.css)
-                    const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
-                    links.forEach(link => {
-                        const href = link.getAttribute('href');
-                        if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
-                            link.remove();
-                        }
-                    });
                 }
             };
 
@@ -233,6 +234,16 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                  scale: 2,
                                  logging: false,
                                  windowWidth: refWidth,
+                                 // Apply same ignore rules here
+                                 ignoreElements: (element: Element) => {
+                                    if (element.tagName === 'LINK') {
+                                        const href = element.getAttribute('href');
+                                        if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
+                                            return true;
+                                        }
+                                    }
+                                    return false;
+                                 },
                                  onclone: (clonedDoc: Document) => {
                                      // Similar expansion logic for reference cards
                                      const clonedNode = clonedDoc.querySelector(`[data-name="${name}"]`) as HTMLElement;
@@ -240,15 +251,6 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                         clonedNode.style.height = 'auto';
                                         clonedNode.style.overflow = 'visible';
                                      }
-                                     
-                                     // Remove broken links here as well
-                                     const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
-                                     links.forEach(link => {
-                                         const href = link.getAttribute('href');
-                                         if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
-                                             link.remove();
-                                         }
-                                     });
                                  }
                              });
                              
