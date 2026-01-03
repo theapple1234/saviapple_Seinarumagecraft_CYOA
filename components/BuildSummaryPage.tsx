@@ -87,6 +87,51 @@ const calculateReferencePoints = (type: BuildType, data: any): number => {
     return total;
 };
 
+// -- Loading Overlay Component --
+const GeneratingOverlay: React.FC<{ template: TemplateType }> = ({ template }) => {
+    let colorClass = "text-cyan-100";
+    let borderClass = "border-cyan-500/30 border-t-cyan-400";
+    let bgClass = "bg-cyan-500/20";
+    let subTextClass = "text-cyan-500/60";
+
+    if (template === 'temple') {
+        colorClass = "text-amber-100";
+        borderClass = "border-amber-500/30 border-t-amber-400";
+        bgClass = "bg-amber-500/20";
+        subTextClass = "text-amber-500/60";
+    } else if (template === 'vortex') {
+        colorClass = "text-purple-100";
+        borderClass = "border-purple-500/30 border-t-purple-400";
+        bgClass = "bg-purple-500/20";
+        subTextClass = "text-purple-500/60";
+    } else if (template === 'terminal') {
+        colorClass = "text-green-100";
+        borderClass = "border-green-500/30 border-t-green-400";
+        bgClass = "bg-green-500/20";
+        subTextClass = "text-green-500/60";
+    }
+
+    return (
+        <div className="absolute inset-0 z-[200] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-auto cursor-wait animate-fade-in">
+            <div className="relative mb-8">
+                <div className={`w-24 h-24 border-4 ${borderClass} rounded-full animate-spin`}></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className={`w-12 h-12 ${bgClass} rounded-full animate-pulse`}></div>
+                </div>
+                {/* Rotating Ring Reverse */}
+                <div className={`absolute -inset-4 border border-dashed ${borderClass} rounded-full opacity-30 animate-spin-slow-reverse`}></div>
+            </div>
+            
+            <h3 className={`font-cinzel text-2xl ${colorClass} tracking-[0.3em] uppercase animate-pulse mb-2 text-center`}>
+                Inscribing Reality...
+            </h3>
+            <p className={`${subTextClass} font-mono text-xs uppercase tracking-wider`}>
+                Please wait while the construct is finalized
+            </p>
+        </div>
+    );
+};
+
 export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const ctx = useCharacterContext();
     const summaryContentRef = useRef<HTMLDivElement>(null);
@@ -95,6 +140,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
     const [showTemplateSelector, setShowTemplateSelector] = useState(false);
     const [showDownloadMenu, setShowDownloadMenu] = useState(false);
     const [customImage, setCustomImage] = useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
     
     // State for Reference Page Append
     const [referenceBuilds, setReferenceBuilds] = useState<AllBuilds>({ companions: {}, weapons: {}, beasts: {}, vehicles: {} });
@@ -136,24 +182,24 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
         }
 
         setShowDownloadMenu(false);
+        setIsGenerating(true);
         const bgColor = template === 'temple' ? '#f8f5f2' : '#000000';
         const timestamp = new Date().toISOString().slice(0,10);
 
         try {
+            // Wait for fonts to be ready to ensure text renders correctly
+            await document.fonts.ready;
+
             // 1. Capture Main Build
+            // Ensure appendix is hidden first to get a clean main build image
             if (showReferenceAppendix) {
                 setShowReferenceAppendix(false);
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 300)); // Allow DOM update
             }
             
-            try {
-                await document.fonts.ready;
-            } catch (e) {
-                // Ignore font loading errors
-            }
-
             const element = summaryContentRef.current;
             
+            // Calculate a sufficiently wide viewport to prevent text wrapping if font fallback occurs
             const captureWidth = Math.max(element.scrollWidth, 1600); 
 
             const options: any = {
@@ -161,32 +207,27 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 useCORS: true,
                 scale: 2,
                 logging: false,
+                // Do NOT set height or windowHeight. Let html2canvas calculate height automatically based on content.
                 windowWidth: captureWidth, 
                 onclone: (clonedDoc: Document) => {
                     const clonedElement = clonedDoc.querySelector('[data-capture-target]') as HTMLElement;
                     if (clonedElement) {
+                        // Ensure container can expand freely
                         clonedElement.style.overflow = 'visible';
                         clonedElement.style.height = 'auto';
                         clonedElement.style.maxHeight = 'none';
                         clonedElement.style.minHeight = '100%';
                         clonedElement.style.width = `${captureWidth}px`;
-                        
-                        // FIX: Remove Vortex Scaling specifically to prevent 0-dimension bugs on nested elements
-                        const vortexContainer = clonedElement.querySelector('.vortex-scale-container') as HTMLElement;
-                        if (vortexContainer) {
-                            // Reset transform and margins to render at full natural size
-                            vortexContainer.style.transform = 'none';
-                            vortexContainer.style.marginTop = '0';
-                            vortexContainer.style.marginBottom = '0';
-                        }
                     }
                     
+                    // Force background color on body to prevent transparency artifacts
                     const clonedBody = clonedDoc.body;
                     clonedBody.style.backgroundColor = bgColor;
                     clonedBody.style.width = `${captureWidth}px`;
                 }
             };
 
+            // Fix for Vortex Layout needing extra space and specific width
             if (template === 'vortex') {
                 options.windowWidth = 2600;
             }
@@ -200,8 +241,10 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 const hasReferenceContent = Object.values(referenceBuilds).some(cat => Object.keys(cat).length > 0);
                 
                 if (hasReferenceContent) {
+                    // Show appendix so we can capture elements
                     setShowReferenceAppendix(true);
-                    await new Promise(resolve => setTimeout(resolve, 500)); 
+                    // Artificial delay to ensure DOM is fully repainted before capture loops begin
+                    await new Promise(resolve => setTimeout(resolve, 800)); 
 
                     const appendixElement = document.getElementById('reference-appendix');
                     if (appendixElement) {
@@ -211,8 +254,9 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                              const name = item.dataset.name || `ref-${i}`;
                              const type = item.dataset.type || 'misc';
                              
+                             // Calculate dimensions for reference card
                              const rect = item.getBoundingClientRect();
-                             const refWidth = Math.max(rect.width, 900); 
+                             const refWidth = Math.max(rect.width, 900); // Ensure width
                              
                              const refCanvas = await window.html2canvas(item, {
                                  backgroundColor: bgColor,
@@ -221,6 +265,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                  logging: false,
                                  windowWidth: refWidth,
                                  onclone: (clonedDoc: Document) => {
+                                     // Similar expansion logic for reference cards
                                      const clonedNode = clonedDoc.querySelector(`[data-name="${name}"]`) as HTMLElement;
                                      if (clonedNode) {
                                         clonedNode.style.height = 'auto';
@@ -231,10 +276,12 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                              
                              downloadImage(refCanvas, `seinaru-${type}-${name}-${template}.png`);
                              
-                             await new Promise(r => setTimeout(r, 400));
+                             // Add delay between downloads
+                             await new Promise(r => setTimeout(r, 300));
                          }
                     }
                     
+                    // Hide after done
                     setShowReferenceAppendix(false);
                 } else {
                      alert("No reference builds found to download.");
@@ -243,7 +290,9 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
 
         } catch (error) {
             console.error("Error generating images:", error);
-            alert("Error generating images. The fonts might be loading slowly, please try again.");
+            alert("Error generating images. Please try again.");
+        } finally {
+            setIsGenerating(false);
             setShowReferenceAppendix(false);
         }
     };
@@ -260,14 +309,11 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             reference: JSON.parse(refBuilds),
             version: '1.0'
         };
-        const dbRequest = indexedDB.open('SeinaruMagecraftFullSaves', 2);
+        const dbRequest = indexedDB.open('SeinaruMagecraftFullSaves', 1);
         dbRequest.onupgradeneeded = (event) => {
             const db = (event.target as IDBOpenDBRequest).result;
             if (!db.objectStoreNames.contains('saves')) {
                 db.createObjectStore('saves', { keyPath: 'name' });
-            }
-             if (!db.objectStoreNames.contains('save_slots')) {
-                db.createObjectStore('save_slots', { keyPath: 'id' });
             }
         };
         dbRequest.onsuccess = (event) => {
@@ -305,6 +351,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
 
     const containerBgClass = template === 'temple' ? 'bg-[#f8f5f2]' : (template === 'default' ? 'bg-[#0a0f1e]' : 'bg-black');
     
+    // Theme colors for Appendix Header
     const appendixHeaderClass = 
         template === 'terminal' ? 'text-green-500 border-green-500/50' :
         template === 'temple' ? 'text-amber-800 border-amber-800/30' :
@@ -319,6 +366,8 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
 
     return (
         <div className="fixed inset-0 bg-[#000000]/95 backdrop-blur-md z-[101] p-0 md:p-4 flex justify-center items-center" role="dialog" aria-modal="true">
+            {isGenerating && <GeneratingOverlay template={template} />}
+
             <div className="bg-[#0a0f1e] w-full max-w-[1600px] h-full rounded-none md:rounded-2xl shadow-2xl border border-cyan-900/50 flex flex-col relative overflow-hidden">
                 
                 {/* Header */}
@@ -349,6 +398,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                         <div className="flex-grow">
                             {template === 'default' && (
                                 <div className="p-8 bg-[#0a0f1e] min-h-full relative overflow-hidden">
+                                    {/* Using a cleaner gradient instead of blur to avoid render issues */}
                                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(22,78,99,0.3)_0%,transparent_70%)] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
                                     <ArcaneLayout sections={sections} />
                                 </div>
@@ -390,10 +440,12 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
                                                         {buildKeys.map(key => {
                                                             const buildData = builds[key].data;
+                                                            // Normalize data for display
                                                             const normalizedData = {
                                                                 ...buildData,
                                                                 perks: buildData.perks instanceof Map ? buildData.perks : new Map(Array.isArray(buildData.perks) ? buildData.perks : []),
                                                                 traits: buildData.traits instanceof Set ? buildData.traits : new Set(Array.isArray(buildData.traits) ? buildData.traits : []),
+                                                                // Convert all Map-like arrays back to Maps/Sets if needed by sub-components
                                                                 specialWeaponMap: new Set(buildData.specialWeaponMap || []),
                                                                 signaturePowerMap: new Set(buildData.signaturePowerMap || []),
                                                                 darkMagicianMap: new Set(buildData.darkMagicianMap || []),
@@ -413,6 +465,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                                                         pointsSpent={cost}
                                                                         isSunForgerActive={isSunForgerActive}
                                                                         template={template}
+                                                                        // No interactive image upload in static render
                                                                     />
                                                                 </div>
                                                             );
@@ -426,7 +479,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                             )}
                         </div>
 
-                        {/* Points Summary Breakdown */}
+                        {/* Points Summary Breakdown - Inside Image Capture Area */}
                         <div className={`w-full p-4 flex justify-center items-center gap-6 text-xs font-mono tracking-wide ${
                             template === 'temple' ? 'bg-[#f4f1ea] border-t border-amber-900/20 text-slate-600' : 
                             template === 'terminal' ? 'bg-black border-t border-green-500/50 text-green-500' :
@@ -522,6 +575,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                 <span>BROWSER SAVE</span>
                             </button>
                             
+                            {/* Improved Download Menu */}
                             <div className="relative">
                                 <button 
                                     onClick={() => {
@@ -561,6 +615,16 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                     </div>
                 </footer>
             </div>
+            
+            <style>{`
+                 @keyframes spin-slow-reverse {
+                    from { transform: rotate(360deg); }
+                    to { transform: rotate(0deg); }
+                }
+                .animate-spin-slow-reverse {
+                    animation: spin-slow-reverse 6s linear infinite;
+                }
+            `}</style>
         </div>
     );
 };

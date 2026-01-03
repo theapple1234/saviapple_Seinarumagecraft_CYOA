@@ -28,15 +28,18 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
     const noBorderIds = ['moving_out', 'bride_to_be', 'mentor_career', 'mentor', 'joys_of_parenting', 'puppy_love', 'teachers_assistant', 'adjunct_professor'];
 
     // Pre-process items for Ring Logic
+    // Specifically, pull out "isLostPower" items from Stage 3 and force them into Ring 1
     const stage3 = sections[2];
     const lostPowers = stage3?.items?.filter((i: any) => i.isLostPower) || [];
     
+    // Helper to get items for a ring configuration, respecting override logic
     const getRingItems = (config: any) => {
         let ringItems: any[] = [];
         const isRing1 = config.radius === 250;
         
         config.stageIndices.forEach((idx: number) => {
             if (sections[idx] && sections[idx].items) {
+                // If it's Stage 3 (idx 2), filter OUT lost powers for its normal placement (Ring 3)
                 if (idx === 2) {
                      ringItems = [...ringItems, ...sections[idx].items.filter((i: any) => !i.isLostPower)];
                 } else {
@@ -45,6 +48,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
             }
         });
         
+        // If this is Ring 1, inject lost powers here
         if (isRing1) {
             ringItems = [...ringItems, ...lostPowers];
         }
@@ -64,21 +68,22 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
         reader.readAsDataURL(file);
     };
 
+    // Collect all custom spells across sections for separate display
     const allCustomSpells = sections.flatMap(s => s.customSpells || []);
 
     return (
         <div className="relative w-full bg-black overflow-hidden flex flex-col items-center justify-start p-20 pb-0">
-             {/* Background Spiral */}
+             {/* Background Spiral - Conic gradients often fail in html2canvas, replacing with radial */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1a1a2e_0%,#000000_100%)] opacity-80 pointer-events-none h-full"></div>
             
             <div className="absolute top-10 left-0 right-0 z-50">
                  <SummaryHeader theme="dark" />
             </div>
 
-            {/* Scale Container for the Vortex - Added class 'vortex-scale-container' for capture manipulation */}
-            <div className="vortex-scale-container relative flex items-center justify-center scale-[0.35] md:scale-[0.45] lg:scale-[0.55] xl:scale-[0.65] origin-top transition-transform duration-500 mt-60" style={{ minHeight: '2300px' }}>
+            {/* Scale Container for the Vortex */}
+            <div className="relative flex items-center justify-center scale-[0.35] md:scale-[0.45] lg:scale-[0.55] xl:scale-[0.65] origin-top transition-transform duration-500 mt-60" style={{ minHeight: '2300px' }}>
                 
-                {/* Center Title Circle */}
+                {/* Center Title Circle - Reduced Size */}
                 <div className="absolute z-[100] flex items-center justify-center w-72 h-72 rounded-full drop-shadow-[0_0_50px_rgba(255,255,255,0.4)] bg-black border-4 border-double border-white/20 group overflow-hidden">
                      {onImageUpload && (
                         <>
@@ -96,12 +101,13 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                     )}
                      <div 
                         className="w-full h-full bg-center bg-cover bg-no-repeat"
-                        style={{ backgroundImage: visualSrc ? `url(${visualSrc})` : undefined }}
+                        style={{ backgroundImage: `url(${visualSrc || "/images/Z6tHPxPB-symbol-transparent.png"})` }}
                      />
                 </div>
 
+                {/* Using fixed dimensions instead of w-full aspect-square to prevent collapse in html2canvas */}
                 <div className="relative w-[2400px] h-[2400px] flex items-center justify-center p-10 font-cinzel text-white">
-                    {/* Background Circle */}
+                    {/* Background Circle - Clipped for Gradient */}
                     <div className="absolute inset-0 rounded-full bg-black overflow-hidden pointer-events-none">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(76,29,149,0.3),transparent_70%)]"></div>
                     </div>
@@ -147,14 +153,15 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                     const isMagicalStyle = Constants.MAGICAL_STYLES_DATA.some(s => s.id === item.id);
                                     const noBorder = isHouseUpgrade || isMagicalStyle || noBorderIds.includes(item.id);
                                     
-                                    // Safety check for image source
-                                    const bgStyle = item.imageSrc ? { backgroundImage: `url(${item.imageSrc})` } : undefined;
+                                    const imageSrc = item.imageSrc;
                                     
+                                    // Glowing Effect Logic
                                     let borderClass = 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]';
                                     
                                     if (item.isLostPower) {
                                         borderClass = 'border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.8)]';
                                     } else if (item.isBoosted) {
+                                        // Golden Glow for Boosted Items
                                         borderClass = 'border-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.8)] ring-2 ring-amber-500/50';
                                     } else if (noBorder) {
                                         borderClass = 'border-transparent';
@@ -170,7 +177,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                                 <div className={`w-24 h-24 rounded-full border-2 ${borderClass} overflow-hidden bg-black group-hover:scale-110 group-hover:z-50 transition-all duration-300 relative z-10`}>
                                                     <div 
                                                         className="w-full h-full opacity-80 group-hover:opacity-100 bg-center bg-cover bg-no-repeat"
-                                                        style={bgStyle}
+                                                        style={{ backgroundImage: `url(${imageSrc})` }}
                                                     />
                                                 </div>
                                                 {item.count && item.count > 1 && (
@@ -191,6 +198,8 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                             </div>
                         );
                     })}
+
+                    {/* Removed the Points overlay circle as requested */}
                 </div>
             </div>
             
