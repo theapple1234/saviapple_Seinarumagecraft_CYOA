@@ -335,19 +335,6 @@ export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 backgroundColor: bgColor, 
                 useCORS: true,
                 scale: 2,
-                // CRITICAL FIX: Ignore broken stylesheets to ensure fonts load correctly and prevent 404 errors
-                ignoreElements: (element: Element) => {
-                    if (element.tagName === 'LINK') {
-                        const href = element.getAttribute('href');
-                        if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
-                            return true;
-                        }
-                    }
-                    return false;
-                },
-                onclone: (clonedDoc: Document) => {
-                     // Additional cleanup if needed
-                }
             });
             
             const link = document.createElement('a');

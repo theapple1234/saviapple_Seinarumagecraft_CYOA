@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Seinaru Magecraft Girls</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -12,83 +11,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
   <link rel="preload" href="https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/HakgyoansimKidaripungseonL.woff2" as="font" type="font/woff2" crossorigin>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <style>
-    /* Custom font setup for Tailwind CDN */
-    body {
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      background-color: #0a101f;
-    }
-    .font-cinzel {
-      font-family: 'Cinzel', serif;
-    }
-    .font-gowun {
-      font-family: 'Gowun Batang', serif;
-    }
-    @font-face {
-        font-family: 'SchoolSafetyKidariBalloon';
-        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/HakgyoansimKidaripungseonL.woff2') format('woff2');
-        font-weight: normal;
-        font-display: swap;
-    }
-    .font-kidari {
-        font-family: 'SchoolSafetyKidariBalloon', sans-serif;
-    }
-    
-    /* Animation Styles */
-    @keyframes fall-and-fade {
-      0% {
-        transform: translate(0, 0) rotate(0deg);
-        opacity: 1;
-      }
-      100% {
-        transform: translate(var(--x-offset-end, 0), 80vh) rotate(calc(var(--rotation, 0deg) * 3));
-        opacity: 0;
-      }
-    }
-    .sigil-fall-animation {
-      position: fixed;
-      z-index: 100;
-      animation: fall-and-fade 1.5s ease-in forwards;
-      pointer-events: none;
-    }
-    img {
-      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
-    }
-    .no-glow {
-      filter: none;
-    }
-
-    /* Magical Girl Animation Styles */
-    
-    /* Logo fade out without flashing */
-    .animate-logo-exit {
-        animation: simple-fade-out 1s ease-in-out forwards;
-    }
-
-    /* Controls slide down and fade */
-    .animate-slide-down-exit {
-        animation: slide-down-fade 0.8s ease-in-out forwards;
-    }
-
-    .animate #splash-subtext {
-        animation: text-fade 0.5s ease-in-out forwards;
-    }
-    
-    @keyframes simple-fade-out {
-        0% { transform: scale(1); opacity: 1; }
-        100% { transform: scale(0.95); opacity: 0; }
-    }
-
-    @keyframes slide-down-fade {
-        0% { transform: translateY(0); opacity: 1; }
-        100% { transform: translateY(50px); opacity: 0; }
-    }
-    
-    @keyframes text-fade {
-        to { opacity: 0; }
-    }
-  </style>
 <script type="importmap">
 {
   "imports": {
