@@ -184,6 +184,15 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                     const clonedBody = clonedDoc.body;
                     clonedBody.style.backgroundColor = bgColor;
                     clonedBody.style.width = `${captureWidth}px`;
+
+                    // FIX: Remove broken stylesheets to prevent html2canvas 404 errors (specifically index.css)
+                    const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
+                    links.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
+                            link.remove();
+                        }
+                    });
                 }
             };
 
@@ -231,6 +240,15 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                         clonedNode.style.height = 'auto';
                                         clonedNode.style.overflow = 'visible';
                                      }
+                                     
+                                     // Remove broken links here as well
+                                     const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
+                                     links.forEach(link => {
+                                         const href = link.getAttribute('href');
+                                         if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
+                                             link.remove();
+                                         }
+                                     });
                                  }
                              });
                              

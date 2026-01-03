@@ -335,6 +335,16 @@ export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 backgroundColor: bgColor, 
                 useCORS: true,
                 scale: 2,
+                onclone: (clonedDoc: Document) => {
+                     // FIX: Remove broken stylesheets to prevent html2canvas 404 errors (specifically index.css)
+                    const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
+                    links.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (href && (href.includes('index.css') || href.includes('vite.svg'))) {
+                            link.remove();
+                        }
+                    });
+                }
             });
             
             const link = document.createElement('a');
