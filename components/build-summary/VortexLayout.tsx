@@ -99,9 +99,11 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                             </div>
                         </>
                     )}
-                     <div 
-                        className="w-full h-full bg-center bg-cover bg-no-repeat"
-                        style={{ backgroundImage: `url(${visualSrc || "/images/Z6tHPxPB-symbol-transparent.png"})` }}
+                     <img 
+                        src={visualSrc || "/images/Z6tHPxPB-symbol-transparent.png"}
+                        alt="Visual"
+                        className="w-full h-full object-cover"
+                        crossOrigin="anonymous"
                      />
                 </div>
 
@@ -175,9 +177,11 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                         >
                                             <div className="relative">
                                                 <div className={`w-24 h-24 rounded-full border-2 ${borderClass} overflow-hidden bg-black group-hover:scale-110 group-hover:z-50 transition-all duration-300 relative z-10`}>
-                                                    <div 
-                                                        className="w-full h-full opacity-80 group-hover:opacity-100 bg-center bg-cover bg-no-repeat"
-                                                        style={{ backgroundImage: `url(${imageSrc})` }}
+                                                    <img 
+                                                        src={imageSrc}
+                                                        alt={item.title}
+                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100"
+                                                        crossOrigin="anonymous"
                                                     />
                                                 </div>
                                                 {item.count && item.count > 1 && (
@@ -219,7 +223,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                     {familyMembers.map((member: any, i: number) => (
                                         <div key={member.id} className="flex gap-3 bg-slate-900/40 border border-purple-500/20 p-3 rounded-lg">
                                             <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-                                                <img src={member.imageSrc} alt="" className="w-full h-full object-cover" />
+                                                <img src={member.imageSrc} alt="" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                             </div>
                                             <div className="flex-grow min-w-0">
                                                 <p className="text-xs font-bold text-purple-200">{member.title}</p>
@@ -246,7 +250,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                         return (
                                             <div key={home.id} className="flex gap-3 bg-slate-900/40 border border-purple-500/20 p-3 rounded-lg">
                                                  <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0 border border-purple-500/30">
-                                                    <img src={home.imageSrc} alt="" className="w-full h-full object-cover" />
+                                                    <img src={home.imageSrc} alt="" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                                 </div>
                                                 <div className="flex-grow min-w-0">
                                                     <div className="flex justify-between items-start mb-1">
