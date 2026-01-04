@@ -219,15 +219,35 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                         clonedElement.style.minHeight = '100%';
                         clonedElement.style.width = `${captureWidth}px`;
                     
-                        // Inject style to raise text by 7px
+                        // Inject style to raise text by 7.5px (default)
                         const style = clonedDoc.createElement('style');
                         style.innerHTML = `
                             h1, h2, h3, h4, h5, h6, p, label, button, a, div > span:not(.absolute) {
                                 position: relative;
-                                top: -7px;
+                                top: -7.5px;
                             }
                         `;
                         clonedDoc.head.appendChild(style);
+
+                        // Special exceptions for Trait titles to raise them by 10px
+                        const traitsToAdjust = [
+                            "LOADED (Parent only)", "GREAT CHEF", "CREATIVE SAVANT", 
+                            "BLESSED (Female only)", "BADASS", "BRILLIANT", "ROLE MODEL", 
+                            "DOTING", "PEAS IN A POD", "STACKED", "HANDYMAN", "BOMBSHELL", 
+                            "STRICT (Parent/Older Sibling only)", "DISOBEDIENT (Younger Sibling only)", 
+                            "PHYSICALLY DISABLED", "MENTALLY DISABLED", "ABUSIVE (Parent only)",
+                            "FORGIVING (Parent/Older Sibling only)"
+                        ];
+                        
+                        const allElements = clonedElement.querySelectorAll('*');
+                        allElements.forEach((el: any) => {
+                            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
+                                const text = el.innerText;
+                                if (traitsToAdjust.some(t => text.includes(t))) {
+                                    el.style.top = '-10px';
+                                }
+                            }
+                        });
                     }
                     
                     // Force background color on body to prevent transparency artifacts
@@ -282,12 +302,12 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                         clonedNode.style.overflow = 'visible';
                                      }
 
-                                     // Inject style to raise text by 7px
+                                     // Inject style to raise text by 7.5px
                                      const style = clonedDoc.createElement('style');
                                      style.innerHTML = `
                                          h1, h2, h3, h4, h5, h6, p, label, button, a, div > span:not(.absolute) {
                                              position: relative;
-                                             top: -7px;
+                                             top: -7.5px;
                                          }
                                      `;
                                      clonedDoc.head.appendChild(style);
