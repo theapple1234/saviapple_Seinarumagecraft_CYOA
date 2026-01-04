@@ -184,40 +184,21 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             return;
         }
 
-        const supportsFileSystemAccess = 'showDirectoryPicker' in window;
-
-        // If including reference and no direct FS access, require JSZip
-        if (includeReference && !supportsFileSystemAccess && (!window.JSZip || !window.saveAs)) {
+        // Removed File System Access check. 
+        // We now enforce JSZip/FileSaver for bundle downloads to ensure it goes to the default downloads folder.
+        if (includeReference && (!window.JSZip || !window.saveAs)) {
             alert('Zip libraries not loaded. Please refresh or check connection.');
             return;
         }
 
         setShowDownloadMenu(false);
 
-        let dirHandle: any = null;
-        let buildFolderHandle: any = null;
         const timestamp = new Date().toISOString().slice(0,10);
-        const folderName = `Build_${timestamp}`;
-
-        // Try direct folder access first if requesting build+reference
-        if (includeReference && supportsFileSystemAccess && window.showDirectoryPicker) {
-            try {
-                // This must be triggered by user gesture
-                dirHandle = await window.showDirectoryPicker();
-                if (!dirHandle) return; // Cancelled
-                buildFolderHandle = await dirHandle.getDirectoryHandle(folderName, { create: true });
-            } catch (err) {
-                // If cancelled or error, we abort (or could fallback to zip, but aborting is safer UX to prevent confusion)
-                if ((err as Error).name === 'AbortError') return;
-                console.error("File System Access API error:", err);
-                // Fallback to zip would happen if we didn't return, but let's assume they might prefer zip if folder pick fails.
-                // However, without a prompt, it's safer to just let the zip logic below take over if buildFolderHandle is null.
-            }
-        }
+        // Clean filename safe string
+        const baseName = currentBuildName ? `Build_${currentBuildName.replace(/[\/\\?%*:|"<> ]/g, '_')}` : `Build_${timestamp}`;
 
         setIsGenerating(true);
         const bgColor = template === 'temple' ? '#f8f5f2' : '#000000';
-        const baseName = folderName;
 
         try {
             // Wait for fonts to be ready to ensure text renders correctly
@@ -258,6 +239,10 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                             h1, h2, h3, h4, h5, h6, p, label, button, a, div > span:not(.absolute) {
                                 position: relative;
                                 top: -7.5px;
+                            }
+                            /* Extra shift for Vortex stage numbers (total -14.5px relative to normal) */
+                            .vortex-stage-number {
+                                top: -14.5px !important;
                             }
                         `;
                         clonedDoc.head.appendChild(style);
@@ -309,22 +294,16 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 // Build Only: Download single image with simple name
                 downloadImage(mainCanvas, `${baseName}.png`);
             } else {
-                // Build + Reference: Folder Download
+                // Build + Reference: Zip Download (forced)
+                const zip = new window.JSZip();
+                // Create a folder inside the zip to keep it organized
+                const folder = zip.folder(baseName);
                 
-                // If using File System Access API
-                if (buildFolderHandle && mainBlob) {
-                     const fileHandle = await buildFolderHandle.getFileHandle("Full Build.png", { create: true });
-                     const writable = await fileHandle.createWritable();
-                     await writable.write(mainBlob);
-                     await writable.close();
+                if (folder && mainBlob) {
+                    folder.file("Full_Build.png", mainBlob);
                 }
 
-                // Prepare Zip fallback if needed
-                const zip = !buildFolderHandle ? new window.JSZip() : null;
-                const folder = zip ? zip.folder(baseName) : null;
-                if (folder && mainBlob) folder.file("Full Build.png", mainBlob);
-
-                // 2. Capture References if requested
+                // 2. Capture References
                 const hasReferenceContent = Object.values(referenceBuilds).some(cat => Object.keys(cat).length > 0);
                 
                 if (hasReferenceContent) {
@@ -338,7 +317,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                          const refItems = appendixElement.querySelectorAll('.reference-capture-item');
                          for (let i = 0; i < refItems.length; i++) {
                              const item = refItems[i] as HTMLElement;
-                             const name = item.dataset.name || `ref-${i}`;
+                             const refName = item.dataset.name || `ref-${i}`;
                              
                              // Calculate dimensions for reference card
                              const rect = item.getBoundingClientRect();
@@ -352,7 +331,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                  windowWidth: refWidth,
                                  onclone: (clonedDoc: Document) => {
                                      // Similar expansion logic for reference cards
-                                     const clonedNode = clonedDoc.querySelector(`[data-name="${name}"]`) as HTMLElement;
+                                     const clonedNode = clonedDoc.querySelector(`[data-name="${refName}"]`) as HTMLElement;
                                      if (clonedNode) {
                                         clonedNode.style.height = 'auto';
                                         clonedNode.style.overflow = 'visible';
@@ -372,20 +351,9 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                              
                              const refBlob = await new Promise<Blob | null>(resolve => refCanvas.toBlob(resolve, 'image/png'));
                              
-                             if (refBlob) {
-                                 // Write to FS if available
-                                 if (buildFolderHandle) {
-                                     // Sanitize name just in case
-                                     const safeName = name.replace(/[\/\\?%*:|"<>]/g, '_');
-                                     const refFileHandle = await buildFolderHandle.getFileHandle(`${safeName}.png`, { create: true });
-                                     const refWritable = await refFileHandle.createWritable();
-                                     await refWritable.write(refBlob);
-                                     await refWritable.close();
-                                 }
-                                 // Or add to Zip
-                                 else if (folder) {
-                                     folder.file(`${name}.png`, refBlob);
-                                 }
+                             if (refBlob && folder) {
+                                 const safeRefName = refName.replace(/[\/\\?%*:|"<>]/g, '_');
+                                 folder.file(`${safeRefName}.png`, refBlob);
                              }
                              
                              // Add small delay between captures
@@ -394,13 +362,9 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                     }
                 }
 
-                // If not using direct folder access, download zip
-                if (zip) {
-                    const zipContent = await zip.generateAsync({ type: "blob" });
-                    window.saveAs(zipContent, `${baseName}.zip`);
-                } else {
-                    alert("Build saved to the selected folder successfully!");
-                }
+                // Generate and download zip
+                const zipContent = await zip.generateAsync({ type: "blob" });
+                window.saveAs(zipContent, `${baseName}.zip`);
             }
 
         } catch (error) {
@@ -595,33 +559,33 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                         </div>
 
                         {/* Points Summary Breakdown - Inside Image Capture Area */}
-                        <div className={`w-full p-4 flex justify-center items-center gap-6 text-xs font-mono tracking-wide ${
+                        <div className={`w-full p-4 flex justify-center items-center gap-8 text-xs font-mono tracking-wide ${
                             template === 'temple' ? 'bg-[#f4f1ea] border-t border-amber-900/20 text-slate-600' : 
                             template === 'terminal' ? 'bg-black border-t border-green-500/50 text-green-500' :
                             template === 'vortex' ? 'bg-black text-gray-500 pt-2 pb-8' :
                             'bg-[#0a0f1e] border-t border-cyan-900/30 text-gray-400'
                         }`}>
-                            <div className="flex gap-2">
-                               <span className={`${template === 'terminal' ? 'text-green-400' : template === 'temple' ? 'text-amber-800' : 'text-purple-400'} font-bold`}>BP:</span> 
-                               <span className={`${template === 'terminal' ? 'text-green-300' : template === 'temple' ? 'text-slate-800' : 'text-purple-200'}`}>+{ctx.bpGained + 100}</span>
-                               <span className="opacity-50">/</span>
-                               <span className="text-red-400">-{ctx.bpSpent}</span>
+                            <div className="flex items-baseline gap-2">
+                               <span className={`${template === 'terminal' ? 'text-green-400' : template === 'temple' ? 'text-amber-800' : template === 'vortex' ? 'text-purple-400' : 'text-cyan-400'} font-bold`}>BP:</span> 
+                               <span className={`text-lg font-bold ${template === 'terminal' ? 'text-green-300' : template === 'temple' ? 'text-slate-900' : 'text-white'}`}>{ctx.blessingPoints}</span>
+                               <span className="opacity-60 text-[10px]">(+{ctx.bpGained + 100} / -{ctx.bpSpent})</span>
                             </div>
+
                             <span className="opacity-30">|</span>
-                            <div className="flex gap-2">
-                               <span className={`${template === 'terminal' ? 'text-green-400' : template === 'temple' ? 'text-green-700' : 'text-green-400'} font-bold`}>FP:</span> 
-                               <span className={`${template === 'terminal' ? 'text-green-300' : template === 'temple' ? 'text-slate-800' : 'text-green-200'}`}>+{ctx.fpGained + 100}</span>
-                               <span className="opacity-50">/</span>
-                               <span className="text-red-400">-{ctx.fpSpent}</span>
+
+                            <div className="flex items-baseline gap-2">
+                               <span className={`${template === 'terminal' ? 'text-green-400' : template === 'temple' ? 'text-green-700' : template === 'vortex' ? 'text-green-400' : 'text-green-400'} font-bold`}>FP:</span> 
+                               <span className={`text-lg font-bold ${template === 'terminal' ? 'text-green-300' : template === 'temple' ? 'text-slate-900' : 'text-white'}`}>{ctx.fortunePoints}</span>
+                               <span className="opacity-60 text-[10px]">(+{ctx.fpGained + 100} / -{ctx.fpSpent})</span>
                             </div>
+
                             {(ctx.kpGained > 0 || ctx.kpSpent > 0) && (
                                 <>
                                     <span className="opacity-30">|</span>
-                                    <div className="flex gap-2">
-                                       <span className={`${template === 'terminal' ? 'text-green-400' : template === 'temple' ? 'text-pink-600' : 'text-pink-400'} font-bold`}>KP:</span> 
-                                       <span className={`${template === 'terminal' ? 'text-green-300' : template === 'temple' ? 'text-slate-800' : 'text-pink-200'}`}>+{ctx.kpGained}</span>
-                                       <span className="opacity-50">/</span>
-                                       <span className="text-red-400">-{ctx.kpSpent}</span>
+                                    <div className="flex items-baseline gap-2">
+                                       <span className={`${template === 'terminal' ? 'text-green-400' : template === 'temple' ? 'text-pink-600' : template === 'vortex' ? 'text-pink-400' : 'text-pink-400'} font-bold`}>KP:</span> 
+                                       <span className={`text-lg font-bold ${template === 'terminal' ? 'text-green-300' : template === 'temple' ? 'text-slate-900' : 'text-white'}`}>{ctx.kuriPoints}</span>
+                                       <span className="opacity-60 text-[10px]">(+{ctx.kpGained} / -{ctx.kpSpent})</span>
                                     </div>
                                 </>
                             )}
@@ -721,7 +685,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                             className="w-full text-left px-4 py-3 hover:bg-purple-900/20 group transition-colors"
                                         >
                                             <span className="block text-xs font-bold text-purple-300 group-hover:text-white font-cinzel">Build + Reference</span>
-                                            <span className="block text-[10px] text-gray-500 group-hover:text-gray-400">Folder with all images</span>
+                                            <span className="block text-[10px] text-gray-500 group-hover:text-gray-400">ZIP File Download</span>
                                         </button>
                                     </div>
                                 )}

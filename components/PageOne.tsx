@@ -482,6 +482,12 @@ export const PageOne: React.FC = () => {
                     const otherNegativeSelected = negativeUpgrades.some(id => id !== upgrade.id && selectedUpgrades.has(id));
 
                     let isDisabled = false;
+                    
+                    // Disable if no house selected or Ragamuffin selected
+                    if (!selectedHouseId || selectedHouseId === 'ragamuffin') {
+                        isDisabled = true;
+                    }
+                    
                     if (isCurrentNegative && otherNegativeSelected) {
                         isDisabled = true;
                     }

@@ -135,7 +135,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                     style={{ transform: `translateY(-${config.radius}px)`, width: '180px', height: '180px' }}>
                                     <div className="flex flex-col items-center justify-center leading-none">
                                         <span className="text-lg opacity-80 mb-2">STAGE</span>
-                                        <span className={`${config.stageIndices.length > 1 ? 'text-5xl' : 'text-7xl'}`}>
+                                        <span className={`${config.stageIndices.length > 1 ? 'text-5xl' : 'text-7xl'} vortex-stage-number`}>
                                             {config.stageIndices.map(i => i + 1).join(' & ')}
                                         </span>
                                     </div>
@@ -198,8 +198,6 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                             </div>
                         );
                     })}
-
-                    {/* Removed the Points overlay circle as requested */}
                 </div>
             </div>
             
