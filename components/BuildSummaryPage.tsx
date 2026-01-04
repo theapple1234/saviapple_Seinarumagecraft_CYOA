@@ -222,14 +222,19 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                         // Inject style to raise text by 7.5px (default)
                         const style = clonedDoc.createElement('style');
                         style.innerHTML = `
-                            h1, h2, h3, h4, h5, h6, p, label, button, a, div > span:not(.absolute) {
+                            h1, h2, h3, h4, h5, h6, p, label, button, a, 
+                            div > span:not(.absolute), 
+                            li, 
+                            .text-xs, 
+                            span[class*="text-"] 
+                            {
                                 position: relative;
                                 top: -7.5px;
                             }
                         `;
                         clonedDoc.head.appendChild(style);
 
-                        // Traits to target for box lowering
+                        // Special exceptions for Trait titles to raise them by 10px
                         const traitsToAdjust = [
                             "LOADED (Parent only)", "GREAT CHEF", "CREATIVE SAVANT", 
                             "BLESSED (Female only)", "BADASS", "BRILLIANT", "ROLE MODEL", 
@@ -239,13 +244,12 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                             "FORGIVING (Parent/Older Sibling only)"
                         ];
                         
-                        // Lower the specific trait boxes by 10px
-                        const allSpans = clonedElement.querySelectorAll('span');
-                        allSpans.forEach((el: any) => {
-                            if (el.classList.contains('border') && el.classList.contains('rounded') && el.classList.contains('flex')) {
+                        const allElements = clonedElement.querySelectorAll('*');
+                        allElements.forEach((el: any) => {
+                            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
                                 const text = el.innerText;
                                 if (traitsToAdjust.some(t => text.includes(t))) {
-                                    el.style.top = '10px';
+                                    el.style.top = '-10px';
                                 }
                             }
                         });
@@ -306,7 +310,12 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                      // Inject style to raise text by 7.5px
                                      const style = clonedDoc.createElement('style');
                                      style.innerHTML = `
-                                         h1, h2, h3, h4, h5, h6, p, label, button, a, div > span:not(.absolute) {
+                                         h1, h2, h3, h4, h5, h6, p, label, button, a, 
+                                         div > span:not(.absolute), 
+                                         li, 
+                                         .text-xs, 
+                                         span[class*="text-"] 
+                                         {
                                              position: relative;
                                              top: -7.5px;
                                          }

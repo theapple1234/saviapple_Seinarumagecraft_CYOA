@@ -250,18 +250,18 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                                 </div>
                                                 <div className="flex-grow min-w-0">
                                                     <div className="flex justify-between items-start mb-1">
-                                                        <span className="text-xs font-bold text-purple-200 truncate leading-loose">{home.title}</span>
+                                                        <span className="text-xs font-bold text-purple-200 truncate leading-[2.5]">{home.title}</span>
                                                     </div>
-                                                    <p className="text-[10px] text-purple-400 uppercase tracking-wider mb-0.5 leading-loose">{home.dominion}</p>
-                                                    <p className="text-[10px] text-gray-400 mb-1 leading-loose">Type: <span className="text-gray-300">{home.type}</span></p>
+                                                    <p className="text-[10px] text-purple-400 uppercase tracking-wider mb-0.5 leading-[2.5]">{home.dominion}</p>
+                                                    <p className="text-[10px] text-gray-400 mb-1 leading-[2.5]">Type: <span className="text-gray-300">{home.type}</span></p>
                                                     <div className="space-y-0.5">
-                                                        {home.stats && <p className="text-[9px] text-cyan-400 font-mono leading-loose">{home.stats}</p>}
-                                                        {home.mythicalPet && <p className="text-[9px] text-pink-400 font-mono leading-loose">Pet: {home.mythicalPet}</p>}
+                                                        {home.stats && <p className="text-[9px] text-cyan-400 font-mono leading-[2.5]">{home.stats}</p>}
+                                                        {home.mythicalPet && <p className="text-[9px] text-pink-400 font-mono leading-[2.5]">Pet: {home.mythicalPet}</p>}
                                                     </div>
                                                     {home.upgrades.length > 0 && (
                                                         <div className="flex flex-wrap gap-1 mt-1.5">
                                                             {home.upgrades.map((u: any, idx: number) => (
-                                                                <span key={idx} className="text-[8px] px-1.5 py-0.5 rounded bg-blue-900/20 border border-blue-500/20 text-blue-200 leading-loose">
+                                                                <span key={idx} className="text-[8px] px-1.5 py-0.5 rounded bg-blue-900/20 border border-blue-500/20 text-blue-200 leading-[2.5]">
                                                                     {u.title}
                                                                     {u.assignedName && <span className="ml-1 text-cyan-300">[{u.assignedName}]</span>}
                                                                 </span>
