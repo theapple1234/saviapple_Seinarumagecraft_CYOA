@@ -32,6 +32,17 @@ const INITIAL_WEAPON: WeaponSelections = { category: [], perks: new Map(), trait
 const INITIAL_BEAST: BeastSelections = { category: [], size: null, perks: new Map(), traits: new Set(), bpSpent: 0 };
 const INITIAL_VEHICLE: VehicleSelections = { category: [], perks: new Map(), traits: new Set(), bpSpent: 0 };
 
+// Fonts CSS for html2canvas injection
+const FONT_STYLES = `
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500&family=Gowun+Batang:wght@400;700&display=swap');
+    @font-face {
+        font-family: 'SchoolSafetyKidariBalloon';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/HakgyoansimKidaripungseonL.woff2') format('woff2');
+        font-weight: normal;
+        font-display: swap;
+    }
+`;
+
 export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const ctx = useCharacterContext();
     const [activeTab, setActiveTab] = useState<BuildType>('companions');
@@ -330,11 +341,20 @@ export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         }
 
         try {
+             // Wait for fonts to be ready
+            await document.fonts.ready;
+
             const bgColor = template === 'temple' ? '#f8f5f2' : '#000000';
             const canvas = await window.html2canvas(summaryRef.current, {
                 backgroundColor: bgColor, 
                 useCORS: true,
                 scale: 2,
+                onclone: (clonedDoc: Document) => {
+                    // Inject Fonts specifically for Linux/Canvas environments
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = FONT_STYLES;
+                    clonedDoc.head.appendChild(style);
+                }
             });
             
             const link = document.createElement('a');

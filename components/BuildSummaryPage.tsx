@@ -21,6 +21,17 @@ declare global {
   }
 }
 
+// Fonts CSS for html2canvas injection
+const FONT_STYLES = `
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500&family=Gowun+Batang:wght@400;700&display=swap');
+    @font-face {
+        font-family: 'SchoolSafetyKidariBalloon';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/HakgyoansimKidaripungseonL.woff2') format('woff2');
+        font-weight: normal;
+        font-display: swap;
+    }
+`;
+
 // -- Helper: Quick Point Calculation for Reference Items --
 const calculateReferencePoints = (type: BuildType, data: any): number => {
     let total = 0;
@@ -210,6 +221,11 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 // Do NOT set height or windowHeight. Let html2canvas calculate height automatically based on content.
                 windowWidth: captureWidth, 
                 onclone: (clonedDoc: Document) => {
+                    // Inject Fonts specifically for Linux/Canvas environments
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = FONT_STYLES;
+                    clonedDoc.head.appendChild(style);
+
                     const clonedElement = clonedDoc.querySelector('[data-capture-target]') as HTMLElement;
                     if (clonedElement) {
                         // Ensure container can expand freely
@@ -265,6 +281,11 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                  logging: false,
                                  windowWidth: refWidth,
                                  onclone: (clonedDoc: Document) => {
+                                     // Inject Fonts here as well
+                                     const style = clonedDoc.createElement('style');
+                                     style.innerHTML = FONT_STYLES;
+                                     clonedDoc.head.appendChild(style);
+
                                      // Similar expansion logic for reference cards
                                      const clonedNode = clonedDoc.querySelector(`[data-name="${name}"]`) as HTMLElement;
                                      if (clonedNode) {
