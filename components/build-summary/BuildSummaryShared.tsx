@@ -33,8 +33,8 @@ export const SummaryHeader: React.FC<{ theme: 'dark' | 'light' | 'cyber' }> = ({
          return (
             <div className="border-b border-green-500/50 pb-4 mb-8 flex justify-between items-end">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tighter text-green-500 font-galmuri">SEINARU_MAGECRAFT_GIRLS</h1>
-                    <p className="text-[10px] text-green-700 font-galmuri mt-1 uppercase tracking-widest">Original by NXTUB | Interactive by SAVIAPPLE</p>
+                    <h1 className="text-3xl font-bold tracking-tighter text-green-500 font-galmuri leading-[2.5]">SEINARU_MAGECRAFT_GIRLS</h1>
+                    <p className="text-[10px] text-green-700 font-galmuri mt-1 uppercase tracking-widest leading-[2.5]">Original by NXTUB | Interactive by SAVIAPPLE</p>
                 </div>
             </div>
         );
@@ -58,6 +58,8 @@ export const SummaryHeader: React.FC<{ theme: 'dark' | 'light' | 'cyber' }> = ({
 
 export const FamilyDetailCard: React.FC<{ member: any, theme: any }> = ({ member, theme }) => {
     const itemTextColor = theme.isTerminal ? 'text-green-400' : theme.isLight ? 'text-amber-800' : 'text-gray-400';
+    const noteLeading = theme.isTerminal ? 'leading-[2.5]' : 'leading-tight';
+    const detailLeading = theme.isTerminal ? 'leading-[2.5]' : '';
 
     return (
         <div className={`p-3 rounded-lg border flex items-start gap-4 ${theme.cardBg} ${theme.cardBorder}`}>
@@ -73,10 +75,10 @@ export const FamilyDetailCard: React.FC<{ member: any, theme: any }> = ({ member
                 <p className={`text-sm font-bold ${theme.textMain} mb-1 uppercase tracking-wide ${theme.fontBody}`}>
                     {member.title} 
                 </p>
-                {member.note && <p className={`text-[11px] ${theme.textDim} font-normal mb-2 leading-tight ${theme.isTerminal ? 'font-galmuri' : ''}`}>"{member.note}"</p>}
+                {member.note && <p className={`text-[11px] ${theme.textDim} font-normal mb-2 ${noteLeading} ${theme.isTerminal ? 'font-galmuri' : ''}`}>"{member.note}"</p>}
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
                     {member.traits.map((t: any, i: number) => (
-                        <span key={i} className={`text-[10px] flex items-center gap-1 ${theme.fontBody} ${itemTextColor}`}>
+                        <span key={i} className={`text-[10px] flex items-center gap-1 ${theme.fontBody} ${itemTextColor} ${detailLeading}`}>
                             <span className="opacity-50">•</span> {t.title}
                             {t.assignedName && <span className={`${theme.textAccent} font-bold`}>[{t.assignedName}]</span>}
                         </span>
@@ -90,6 +92,7 @@ export const FamilyDetailCard: React.FC<{ member: any, theme: any }> = ({ member
 export const HousingDetailCard: React.FC<{ home: any, theme: any }> = ({ home, theme }) => {
     const itemTextColor = theme.isTerminal ? 'text-green-400' : theme.isLight ? 'text-amber-800' : 'text-gray-400';
     const dividerColor = theme.isTerminal ? 'border-green-500/20' : theme.isLight ? 'border-amber-900/10' : 'border-white/10';
+    const detailLeading = theme.isTerminal ? 'leading-[2.5]' : '';
 
     return (
         <div className={`p-3 rounded-lg border flex flex-col gap-2 ${theme.cardBg} ${theme.cardBorder}`}>
@@ -104,15 +107,15 @@ export const HousingDetailCard: React.FC<{ home: any, theme: any }> = ({ home, t
                 </div>
                 <div>
                     <p className={`text-sm font-bold ${theme.textMain} mb-1 uppercase tracking-wide ${theme.fontBody}`}>{home.title}</p>
-                    <p className={`text-[10px] ${theme.textDim} uppercase tracking-wider ${theme.fontBody}`}>{home.dominion} • {home.type}</p>
-                    {home.stats && <p className={`text-[10px] ${theme.textAccent} font-mono mt-0.5 ${theme.fontBody}`}>{home.stats}</p>}
-                    {home.mythicalPet && <p className={`text-[10px] text-pink-400 font-mono mt-0.5 ${theme.fontBody}`}>Pet: {home.mythicalPet}</p>}
+                    <p className={`text-[10px] ${theme.textDim} uppercase tracking-wider ${theme.fontBody} ${detailLeading}`}>{home.dominion} • {home.type}</p>
+                    {home.stats && <p className={`text-[10px] ${theme.textAccent} font-mono mt-0.5 ${theme.fontBody} ${detailLeading}`}>{home.stats}</p>}
+                    {home.mythicalPet && <p className={`text-[10px] text-pink-400 font-mono mt-0.5 ${theme.fontBody} ${detailLeading}`}>Pet: {home.mythicalPet}</p>}
                 </div>
             </div>
             {home.upgrades.length > 0 && (
                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 pl-1">
                     {home.upgrades.map((u: any, i: number) => (
-                        <span key={i} className={`text-[10px] ${theme.fontBody} ${itemTextColor}`}>
+                        <span key={i} className={`text-[10px] ${theme.fontBody} ${itemTextColor} ${detailLeading}`}>
                              <span className="opacity-50 mr-1">•</span>
                             {u.title}
                             {u.extraInfo && <span className={theme.isLight ? "ml-1 text-amber-600" : "ml-1 text-gray-500"}>({u.extraInfo})</span>}
@@ -129,6 +132,7 @@ export const CustomSpellCard: React.FC<{ spell: any, index: number, theme: any }
     const isTerminal = theme.isTerminal;
     const isTemple = theme.cardBg.includes('white');
     const isMilgrath = spell.mialgrathApplied;
+    const leadingClass = isTerminal ? 'leading-[2.5]' : 'leading-relaxed';
 
     const borderColor = isMilgrath 
         ? (isTerminal ? 'border-green-400' : isTemple ? 'border-amber-500' : 'border-cyan-400') 
@@ -143,10 +147,10 @@ export const CustomSpellCard: React.FC<{ spell: any, index: number, theme: any }
         : (isTerminal ? 'bg-black' : isTemple ? 'bg-white' : 'bg-black/40');
     
     const iconClass = isTerminal 
-        ? 'drop-shadow-[0_0_8px_rgba(74,222,128,0.8)] sepia-[0.5] hue-rotate-[90deg]'
+        ? 'drop-shadow-[0_0_5px_rgba(74,222,128,0.6)]'
         : isTemple 
-            ? 'drop-shadow-[0_0_8px_rgba(245,158,11,0.6)] sepia-[0.8]'
-            : 'drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]';
+            ? 'drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]'
+            : 'drop-shadow-[0_0_5px_rgba(34,211,238,0.6)]';
 
     return (
         <div className={`p-4 rounded-lg border-2 flex flex-col gap-2 relative overflow-hidden ${borderColor} ${bgClass}`}>
@@ -155,7 +159,7 @@ export const CustomSpellCard: React.FC<{ spell: any, index: number, theme: any }
                     <img 
                         src="/images/nsKwSt0b-mialgrath.png" 
                         alt="Milgrath" 
-                        className={`w-6 h-6 object-contain ${iconClass}`}
+                        className={`w-10 h-10 object-contain ${iconClass}`}
                         title="Milgrath Override"
                     />
                 </div>
@@ -170,7 +174,7 @@ export const CustomSpellCard: React.FC<{ spell: any, index: number, theme: any }
                 </h4>
             </div>
 
-            <p className={`text-xs whitespace-pre-wrap leading-relaxed ${isTerminal ? 'font-galmuri text-green-400' : isTemple ? 'font-serif text-slate-800' : 'font-sans text-gray-300'}`}>
+            <p className={`text-xs whitespace-pre-wrap ${leadingClass} ${isTerminal ? 'font-galmuri text-green-400' : isTemple ? 'font-serif text-slate-800' : 'font-sans text-gray-300'}`}>
                 {spell.description}
             </p>
 
@@ -179,7 +183,7 @@ export const CustomSpellCard: React.FC<{ spell: any, index: number, theme: any }
                     <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isTerminal ? 'text-green-400 font-galmuri' : isTemple ? 'text-amber-600' : 'text-cyan-400'}`}>
                         Override Effect
                     </p>
-                    <p className={`text-xs ${isTerminal ? 'font-galmuri text-green-600' : isTemple ? 'text-slate-600' : 'text-gray-400'}`}>
+                    <p className={`text-xs ${leadingClass} ${isTerminal ? 'font-galmuri text-green-600' : isTemple ? 'text-slate-600' : 'text-gray-400'}`}>
                         {spell.mialgrathDescription}
                     </p>
                 </div>

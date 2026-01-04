@@ -65,7 +65,7 @@ const renderGrid = (ids: string[] | Set<string> | Map<string, any>, pool: any[],
     
     return (
         <div className="space-y-2">
-            <h5 className={`font-mono text-[10px] ${theme.textDim} uppercase tracking-[0.3em] mb-2`}>{label}</h5>
+            <h5 className={`${theme.fontTech} text-[10px] ${theme.textDim} uppercase tracking-[0.3em] mb-2`}>{label}</h5>
             <div className="grid grid-cols-2 gap-2">
                 {array.map(id => {
                     const item = pool.find(i => i.id === id);
@@ -83,7 +83,7 @@ const renderGrid = (ids: string[] | Set<string> | Map<string, any>, pool: any[],
                             </div>
                             <div className="min-w-0">
                                 <p className={`text-[11px] font-bold ${theme.textMain} truncate ${theme.fontBody}`}>{item.title}</p>
-                                {count && count > 1 && <p className={`text-[9px] ${theme.textAccent} font-mono`}>x{count}</p>}
+                                {count && count > 1 && <p className={`text-[9px] ${theme.textAccent} ${theme.fontTech}`}>x{count}</p>}
                             </div>
                         </div>
                     );
@@ -108,7 +108,7 @@ const renderSpells = (spellIds: Set<string> | string[], label: string, color: st
 
     return (
         <div className="space-y-2">
-            <h5 className={`font-mono text-[10px] ${theme.textDim} uppercase tracking-[0.3em] mb-2`}>{label}</h5>
+            <h5 className={`${theme.fontTech} text-[10px] ${theme.textDim} uppercase tracking-[0.3em] mb-2`}>{label}</h5>
             <div className="grid grid-cols-2 gap-2">
                 {arr.map(id => {
                     const spell = ALL_SPELLS.find(s => s.id === id);
@@ -362,6 +362,7 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
             textAccent: "text-cyan-400",
             fontHead: "font-cinzel",
             fontBody: "font-sans",
+            fontTech: "font-mono",
             cardBg: "bg-black/40",
             cardBorder: "border-white/5",
             statBox: "bg-black/60 border-cyan-500/30",
@@ -377,6 +378,7 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
             textAccent: "text-amber-700",
             fontHead: "font-cinzel",
             fontBody: "font-serif",
+            fontTech: "font-mono",
             cardBg: "bg-white/60",
             cardBorder: "border-amber-900/10",
             statBox: "bg-white border-amber-700/20 shadow-sm",
@@ -390,8 +392,9 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
             textMain: "text-green-500",
             textDim: "text-green-700",
             textAccent: "text-green-400",
-            fontHead: "font-mono",
-            fontBody: "font-mono",
+            fontHead: "font-galmuri leading-[2.5]",
+            fontBody: "font-galmuri leading-[2.5]",
+            fontTech: "font-galmuri leading-[2.5]",
             cardBg: "bg-green-900/10",
             cardBorder: "border-green-500/30",
             statBox: "bg-black border-green-500",
@@ -408,7 +411,7 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
         <div className={`p-8 flex flex-col ${theme.bg} ${theme.border} rounded-xl shadow-2xl`}>
             {/* Header */}
             <div className={`text-center mb-8 border-b-2 ${theme.divider} pb-6`}>
-                <p className={`font-mono text-[10px] ${theme.textDim} uppercase tracking-[0.5em] mb-2`}>
+                <p className={`${theme.fontTech} text-[10px] ${theme.textDim} uppercase tracking-[0.5em] mb-2`}>
                     {isTerminal ? 'Seinaru Magecraft Girls' : 'Seinaru Magecraft Girls'}
                 </p>
                 <h1 className={`${theme.fontHead} text-3xl font-bold ${theme.textMain} tracking-[0.1em] mb-1 uppercase`}>{name}</h1>
@@ -418,15 +421,15 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
             {/* Main Stats Bar */}
             <div className="grid grid-cols-3 gap-4 mb-8">
                 <div className={`${theme.statBox} border rounded-lg p-2 text-center`}>
-                    <p className={`text-[9px] ${theme.textDim} uppercase font-mono tracking-widest`}>Points</p>
+                    <p className={`text-[9px] ${theme.textDim} uppercase ${theme.fontTech} tracking-widest`}>Points</p>
                     <p className={`text-xl ${theme.fontHead} font-bold ${theme.textMain}`}>{pointsSpent}</p>
                 </div>
                 <div className={`${theme.statBox} border rounded-lg p-2 text-center`}>
-                    <p className={`text-[9px] ${theme.textDim} uppercase font-mono tracking-widest`}>Type</p>
+                    <p className={`text-[9px] ${theme.textDim} uppercase ${theme.fontTech} tracking-widest`}>Type</p>
                     <p className={`text-lg ${theme.fontHead} font-bold ${theme.textAccent} uppercase`}>{type.slice(0, -1)}</p>
                 </div>
                 <div className={`${theme.statBox} border rounded-lg p-2 text-center`}>
-                    <p className={`text-[9px] ${theme.textDim} uppercase font-mono tracking-widest`}>Discounted Points</p>
+                    <p className={`text-[9px] ${theme.textDim} uppercase ${theme.fontTech} tracking-widest`}>Discounted Points</p>
                     <p className={`text-xl ${theme.fontHead} font-bold text-yellow-500`}>
                         {isSunForgerActive ? `${selections.bpSpent || 0} BP` : (discount > 0 ? `${discount} pts` : "N/A")}
                     </p>
@@ -472,13 +475,13 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
                         )}
                         {type === 'weapons' && (
                             <div className="space-y-2">
-                                <h5 className={`font-mono text-[10px] ${theme.textDim} uppercase tracking-[0.3em]`}>Categories</h5>
+                                <h5 className={`${theme.fontTech} text-[10px] ${theme.textDim} uppercase tracking-[0.3em]`}>Categories</h5>
                                 {selections.category.map((c: string) => renderItem(c, Constants.WEAPON_CATEGORIES, 'Form', theme))}
                             </div>
                         )}
                         {type === 'vehicles' && (
                             <div className="space-y-2">
-                                <h5 className={`font-mono text-[10px] ${theme.textDim} uppercase tracking-[0.3em]`}>Categories</h5>
+                                <h5 className={`${theme.fontTech} text-[10px] ${theme.textDim} uppercase tracking-[0.3em]`}>Categories</h5>
                                 {selections.category.map((c: string) => renderItem(c, Constants.VEHICLE_CATEGORIES, 'Model', theme))}
                             </div>
                         )}
@@ -521,13 +524,13 @@ export const ReferenceBuildSummary: React.FC<ReferenceBuildSummaryProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                             {selections.inhumanFormBeastName && (
                                 <div className={`${theme.cardBg} border ${theme.cardBorder} p-3 rounded-lg text-center`}>
-                                    <p className={`text-[9px] ${theme.textDim} uppercase font-mono tracking-widest mb-1`}>Inhuman Core</p>
+                                    <p className={`text-[9px] ${theme.textDim} uppercase ${theme.fontTech} tracking-widest mb-1`}>Inhuman Core</p>
                                     <p className={`text-xs font-bold ${theme.textAccent}`}>{selections.inhumanFormBeastName}</p>
                                 </div>
                             )}
                             {selections.specialWeaponName && (
                                 <div className={`${theme.cardBg} border ${theme.cardBorder} p-3 rounded-lg text-center`}>
-                                    <p className={`text-[9px] ${theme.textDim} uppercase font-mono tracking-widest mb-1`}>Signature Armament</p>
+                                    <p className={`text-[9px] ${theme.textDim} uppercase ${theme.fontTech} tracking-widest mb-1`}>Signature Armament</p>
                                     <p className={`text-xs font-bold ${theme.textAccent}`}>{selections.specialWeaponName}</p>
                                 </div>
                             )}

@@ -14,10 +14,13 @@ import type { AllBuilds, BuildType } from '../types';
 type TemplateType = 'default' | 'temple' | 'vortex' | 'terminal';
 const STORAGE_KEY = 'seinaru_magecraft_builds';
 
-// Add type declaration for html2canvas from CDN
+// Add type declaration for html2canvas, JSZip and FileSaver from CDN
 declare global {
   interface Window {
     html2canvas: any;
+    JSZip: any;
+    saveAs: any;
+    showDirectoryPicker?: () => Promise<any>;
   }
 }
 
@@ -181,10 +184,40 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             return;
         }
 
+        const supportsFileSystemAccess = 'showDirectoryPicker' in window;
+
+        // If including reference and no direct FS access, require JSZip
+        if (includeReference && !supportsFileSystemAccess && (!window.JSZip || !window.saveAs)) {
+            alert('Zip libraries not loaded. Please refresh or check connection.');
+            return;
+        }
+
         setShowDownloadMenu(false);
+
+        let dirHandle: any = null;
+        let buildFolderHandle: any = null;
+        const timestamp = new Date().toISOString().slice(0,10);
+        const folderName = `Build_${timestamp}`;
+
+        // Try direct folder access first if requesting build+reference
+        if (includeReference && supportsFileSystemAccess && window.showDirectoryPicker) {
+            try {
+                // This must be triggered by user gesture
+                dirHandle = await window.showDirectoryPicker();
+                if (!dirHandle) return; // Cancelled
+                buildFolderHandle = await dirHandle.getDirectoryHandle(folderName, { create: true });
+            } catch (err) {
+                // If cancelled or error, we abort (or could fallback to zip, but aborting is safer UX to prevent confusion)
+                if ((err as Error).name === 'AbortError') return;
+                console.error("File System Access API error:", err);
+                // Fallback to zip would happen if we didn't return, but let's assume they might prefer zip if folder pick fails.
+                // However, without a prompt, it's safer to just let the zip logic below take over if buildFolderHandle is null.
+            }
+        }
+
         setIsGenerating(true);
         const bgColor = template === 'temple' ? '#f8f5f2' : '#000000';
-        const timestamp = new Date().toISOString().slice(0,10);
+        const baseName = folderName;
 
         try {
             // Wait for fonts to be ready to ensure text renders correctly
@@ -270,11 +303,28 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             }
 
             const mainCanvas = await window.html2canvas(element, options);
+            const mainBlob = await new Promise<Blob | null>(resolve => mainCanvas.toBlob(resolve, 'image/png'));
             
-            downloadImage(mainCanvas, `seinaru-build-${template}-${timestamp}.png`);
+            if (!includeReference) {
+                // Build Only: Download single image with simple name
+                downloadImage(mainCanvas, `${baseName}.png`);
+            } else {
+                // Build + Reference: Folder Download
+                
+                // If using File System Access API
+                if (buildFolderHandle && mainBlob) {
+                     const fileHandle = await buildFolderHandle.getFileHandle("Full Build.png", { create: true });
+                     const writable = await fileHandle.createWritable();
+                     await writable.write(mainBlob);
+                     await writable.close();
+                }
 
-            // 2. Capture References if requested
-            if (includeReference) {
+                // Prepare Zip fallback if needed
+                const zip = !buildFolderHandle ? new window.JSZip() : null;
+                const folder = zip ? zip.folder(baseName) : null;
+                if (folder && mainBlob) folder.file("Full Build.png", mainBlob);
+
+                // 2. Capture References if requested
                 const hasReferenceContent = Object.values(referenceBuilds).some(cat => Object.keys(cat).length > 0);
                 
                 if (hasReferenceContent) {
@@ -289,7 +339,6 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                          for (let i = 0; i < refItems.length; i++) {
                              const item = refItems[i] as HTMLElement;
                              const name = item.dataset.name || `ref-${i}`;
-                             const type = item.dataset.type || 'misc';
                              
                              // Calculate dimensions for reference card
                              const rect = item.getBoundingClientRect();
@@ -321,17 +370,36 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                  }
                              });
                              
-                             downloadImage(refCanvas, `seinaru-${type}-${name}-${template}.png`);
+                             const refBlob = await new Promise<Blob | null>(resolve => refCanvas.toBlob(resolve, 'image/png'));
                              
-                             // Add delay between downloads
-                             await new Promise(r => setTimeout(r, 300));
+                             if (refBlob) {
+                                 // Write to FS if available
+                                 if (buildFolderHandle) {
+                                     // Sanitize name just in case
+                                     const safeName = name.replace(/[\/\\?%*:|"<>]/g, '_');
+                                     const refFileHandle = await buildFolderHandle.getFileHandle(`${safeName}.png`, { create: true });
+                                     const refWritable = await refFileHandle.createWritable();
+                                     await refWritable.write(refBlob);
+                                     await refWritable.close();
+                                 }
+                                 // Or add to Zip
+                                 else if (folder) {
+                                     folder.file(`${name}.png`, refBlob);
+                                 }
+                             }
+                             
+                             // Add small delay between captures
+                             await new Promise(r => setTimeout(r, 100));
                          }
                     }
-                    
-                    // Hide after done
-                    setShowReferenceAppendix(false);
+                }
+
+                // If not using direct folder access, download zip
+                if (zip) {
+                    const zipContent = await zip.generateAsync({ type: "blob" });
+                    window.saveAs(zipContent, `${baseName}.zip`);
                 } else {
-                     alert("No reference builds found to download.");
+                    alert("Build saved to the selected folder successfully!");
                 }
             }
 
@@ -653,7 +721,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                             className="w-full text-left px-4 py-3 hover:bg-purple-900/20 group transition-colors"
                                         >
                                             <span className="block text-xs font-bold text-purple-300 group-hover:text-white font-cinzel">Build + Reference</span>
-                                            <span className="block text-[10px] text-gray-500 group-hover:text-gray-400">Multiple Images (Main + Refs)</span>
+                                            <span className="block text-[10px] text-gray-500 group-hover:text-gray-400">Folder with all images</span>
                                         </button>
                                     </div>
                                 )}

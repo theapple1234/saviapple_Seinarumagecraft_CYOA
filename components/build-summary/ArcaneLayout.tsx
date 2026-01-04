@@ -94,10 +94,10 @@ export const ArcaneLayout: React.FC<{ sections: any[] }> = ({ sections }) => {
                                         
                                         {/* Boost Indicators */}
                                         {group.activeBoosts && group.activeBoosts.length > 0 && (
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-3 ml-2 items-center">
                                                 {group.activeBoosts.map((boost: string, idx: number) => (
-                                                    <span key={idx} className="text-[9px] font-bold bg-cyan-950/50 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                                        {boost} Boost
+                                                    <span key={idx} className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1">
+                                                        <span className="text-cyan-600 text-xs">+</span> {boost} Boost
                                                     </span>
                                                 ))}
                                             </div>

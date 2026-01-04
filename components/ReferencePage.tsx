@@ -154,10 +154,15 @@ export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     };
 
     const handleSaveAsNew = () => {
-        const newName = prompt("Enter a name for the new build:", currentName || "New Build");
-        if (!newName || !newName.trim()) return;
-        if (allBuilds[activeTab][newName] && !confirm(`Build "${newName}" already exists. Overwrite?`)) return;
-        saveToName(newName); // No original name passed implies new entry
+        const nameToSave = currentName.trim();
+        
+        if (!nameToSave) {
+            alert("Please enter a name for the build.");
+            return;
+        }
+
+        if (allBuilds[activeTab][nameToSave] && !confirm(`Build "${nameToSave}" already exists. Overwrite?`)) return;
+        saveToName(nameToSave); // No original name passed implies new entry
     };
 
     const handleInitialSave = () => {
@@ -248,13 +253,6 @@ export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) =>
          else if (activeTab === 'beasts') setBeastSelections(prev => ({...prev, bpSpent: amount}));
          else if (activeTab === 'vehicles') setVehicleSelections(prev => ({...prev, bpSpent: amount}));
     };
-
-    // ... Export / Import Logic (unchanged mostly, but ensure originalLoadedName is handled if needed on import) ...
-    // Note: On import, we currently set currentName and load data, but do we treat it as an existing file? 
-    // If it overwrote something, yes. If not, it depends.
-    // In existing code, handleImport sets currentName and calls loadDataIntoView. 
-    // To be safe, let's treat imported data as "Loaded" if it matches an entry in allBuilds.
-    // Updated handleFileChange Logic below.
 
     const handleExport = () => {
         if (!currentName) {
@@ -411,11 +409,35 @@ export const ReferencePage: React.FC<{ onClose: () => void }> = ({ onClose }) =>
 
         try {
             const bgColor = template === 'temple' ? '#f8f5f2' : '#000000';
-            const canvas = await window.html2canvas(summaryRef.current, {
+            
+            const options: any = {
                 backgroundColor: bgColor, 
                 useCORS: true,
                 scale: 2,
-            });
+            };
+
+            // Apply adjustments for non-vortex templates
+            if (template !== 'vortex') {
+                options.onclone = (clonedDoc: Document) => {
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        /* Loose leading for all text */
+                        h1, h2, h3, h4, h5, h6, p, span, label, button, a, li, div {
+                            line-height: 2 !important;
+                        }
+                        
+                        /* Position shift up 7px for primary text elements to counteract leading expansion */
+                        /* div > span targets direct span children of divs like Counters to shift them too */
+                        h1, h2, h3, h4, h5, h6, p, label, button, a, li, div > span {
+                            position: relative;
+                            top: -7px;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
+                };
+            }
+
+            const canvas = await window.html2canvas(summaryRef.current, options);
             
             const link = document.createElement('a');
             link.download = `seinaru-build-${template}-${currentName || 'Untitled'}.png`;

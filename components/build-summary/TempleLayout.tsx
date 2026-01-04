@@ -83,10 +83,10 @@ export const TempleLayout: React.FC<{ sections: any[] }> = ({ sections }) => {
                                             
                                             {/* Boost Indicators */}
                                             {group.activeBoosts && group.activeBoosts.length > 0 && (
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-3 ml-2 items-center">
                                                     {group.activeBoosts.map((boost: string, idx: number) => (
-                                                        <span key={idx} className="text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                                            {boost} Boosted
+                                                        <span key={idx} className="text-[10px] font-bold text-amber-700/80 uppercase tracking-widest font-serif flex items-center gap-1">
+                                                             <span className="text-amber-400">✧</span> {boost} Boosted
                                                         </span>
                                                     ))}
                                                 </div>
