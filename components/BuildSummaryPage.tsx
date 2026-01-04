@@ -224,17 +224,6 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                     const clonedBody = clonedDoc.body;
                     clonedBody.style.backgroundColor = bgColor;
                     clonedBody.style.width = `${captureWidth}px`;
-
-                    // FIX: Remove complex gradients for Arcane/Vortex to prevent createPattern usage/issues
-                    // This forces html2canvas to rely on the solid bgColor instead of trying to rasterize the gradient
-                    if (template === 'default') {
-                        const arcaneGradient = clonedDoc.getElementById('arcane-bg-gradient');
-                        if (arcaneGradient) arcaneGradient.remove();
-                    }
-                    if (template === 'vortex') {
-                        const vortexGradient = clonedDoc.getElementById('vortex-bg-gradient');
-                        if (vortexGradient) vortexGradient.remove();
-                    }
                 }
             };
 
@@ -410,7 +399,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                             {template === 'default' && (
                                 <div className="p-8 bg-[#0a0f1e] min-h-full relative overflow-hidden">
                                     {/* Using a cleaner gradient instead of blur to avoid render issues */}
-                                    <div id="arcane-bg-gradient" className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(22,78,99,0.3)_0%,transparent_70%)] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+                                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(22,78,99,0.3)_0%,transparent_70%)] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
                                     <ArcaneLayout sections={sections} />
                                 </div>
                             )}

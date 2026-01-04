@@ -1,92 +1,185 @@
 
 /**
- * Simple Image Migration Script (ESM Version)
- *
- * Usage:
- * 1. Run from project root: node tools/migrate-images-simple.js
- *
- * Functionality:
- * - Scans constants, components folders, and App.tsx.
- * - Extracts unique Hash from ImgBB image URLs.
- * - Replaces URLs in source code with local paths pointing to /images/[HASH]-[FILENAME].
- * - Assumes images already exist in public/images (skips download).
+ * Simple Image Migration Script (ESM Version) - Path Update Only
+ * 
+ * Usage: node tools/migrate-images-simple.js
+ * 
+ * Logic:
+ * 1. Scan files for ibb.co links.
+ * 2. Replace them with local paths (assuming images exist).
+ * 3. Verify results.
  */
 
 import fs from 'fs';
 import path from 'path';
+import readline from 'readline';
 import { fileURLToPath } from 'url';
 
-// Implement __dirname in ESM environment
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuration
+// Config
 const ROOT_DIR = path.resolve(__dirname, '..');
-
-const TARGET_PATHS = [
-    path.join(ROOT_DIR, 'constants'),
-    path.join(ROOT_DIR, 'components'),
-    path.join(ROOT_DIR, 'App.tsx')
-];
+const PUBLIC_IMG_DIR = path.join(ROOT_DIR, 'public', 'images');
 const URL_PREFIX = '/images';
-
-// Regex: Capture Hash and Filename from ImgBB URL
 const IMAGE_REGEX = /https:\/\/i\.ibb\.co\/([a-zA-Z0-9]+)\/([\w%\-]+)\.(jpg|png|jpeg|gif)/g;
 
-async function processFile(filePath) {
-    let content = fs.readFileSync(filePath, 'utf8');
-    let hasChanges = false;
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-    // Find all matches
-    const matches = [...content.matchAll(IMAGE_REGEX)];
+const askQuestion = (query) => new Promise(resolve => rl.question(query, resolve));
 
-    if (matches.length === 0) return;
+function scanDirectory(dir, fileList = []) {
+    if (!fs.existsSync(dir)) return fileList;
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+        const fullPath = path.join(dir, file);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+            scanDirectory(fullPath, fileList);
+        } else if ((fullPath.endsWith('.ts') || fullPath.endsWith('.tsx')) && !fullPath.includes('node_modules')) {
+            fileList.push(fullPath);
+        }
+    }
+    return fileList;
+}
 
-    console.log(`\n📄 Processing: ${path.basename(filePath)} (Found images: ${matches.length})`);
+async function scanPhase() {
+    console.log("🔍 Phase 1: Scanning files...");
+    let allMatches = [];
+    let filesToScan = [];
 
-    // Replace URLs in code
-    const newContent = content.replace(IMAGE_REGEX, (fullUrl, hash, name, ext) => {
-        hasChanges = true;
-        // Construct the filename format expected to be in public/images
-        const uniqueFilename = `${hash}-${name}.${ext}`;
-        return `${URL_PREFIX}/${uniqueFilename}`;
-    });
+    if (fs.existsSync(path.join(ROOT_DIR, 'App.tsx'))) filesToScan.push(path.join(ROOT_DIR, 'App.tsx'));
+    filesToScan = [...filesToScan, ...scanDirectory(path.join(ROOT_DIR, 'constants'))];
+    filesToScan = [...filesToScan, ...scanDirectory(path.join(ROOT_DIR, 'components'))];
 
-    if (hasChanges) {
-        fs.writeFileSync(filePath, newContent, 'utf8');
-        console.log(`✨ Code update complete: ${path.basename(filePath)}`);
+    for (const filePath of filesToScan) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const matches = [...content.matchAll(IMAGE_REGEX)];
+        
+        if (matches.length > 0) {
+            matches.forEach(m => {
+                allMatches.push({
+                    filePath,
+                    fullUrl: m[0],
+                    uniqueFilename: `${m[1]}-${m[2]}.${m[3]}`
+                });
+            });
+        }
+    }
+    return allMatches;
+}
+
+async function executionPhase(matches) {
+    console.log(`\n🚀 Phase 2: Updating paths for ${matches.length} matches...`);
+    
+    let processedCount = 0;
+    let replacementCount = 0;
+    let missingFileCount = 0;
+    const total = matches.length;
+
+    const fileGroups = matches.reduce((acc, curr) => {
+        if (!acc[curr.filePath]) acc[curr.filePath] = [];
+        acc[curr.filePath].push(curr);
+        return acc;
+    }, {});
+
+    for (const filePath of Object.keys(fileGroups)) {
+        let content = fs.readFileSync(filePath, 'utf8');
+        let fileChanged = false;
+        const items = fileGroups[filePath];
+
+        for (const item of items) {
+            // Check if file exists locally (just for reporting)
+            const localPath = path.join(PUBLIC_IMG_DIR, item.uniqueFilename);
+            if (!fs.existsSync(localPath)) {
+                missingFileCount++;
+                // We typically still replace the path, or we could log a warning.
+                // Assuming "Simple" mode blindly updates paths.
+            }
+
+            if (content.includes(item.fullUrl)) {
+                content = content.replace(item.fullUrl, `${URL_PREFIX}/${item.uniqueFilename}`);
+                fileChanged = true;
+                replacementCount++;
+            }
+            
+            processedCount++;
+            process.stdout.write(`\rProgress: ${processedCount} / ${total}`);
+        }
+
+        if (fileChanged) {
+            fs.writeFileSync(filePath, content, 'utf8');
+        }
+    }
+    console.log(`\n\n✅ Execution Complete.`);
+    console.log(`- Replacements: ${replacementCount}`);
+    if (missingFileCount > 0) {
+        console.log(`⚠️  Warning: ${missingFileCount} referenced images are missing from ${PUBLIC_IMG_DIR}`);
     }
 }
 
-async function scanAndProcess(targetPath) {
-    if (!fs.existsSync(targetPath)) return;
-
-    const stat = fs.statSync(targetPath);
-
-    if (stat.isDirectory()) {
-        const files = fs.readdirSync(targetPath);
-        for (const file of files) {
-            const fullPath = path.join(targetPath, file);
-            await scanAndProcess(fullPath); // Recursive call
-        }
-    } else if (stat.isFile() && (targetPath.endsWith('.ts') || targetPath.endsWith('.tsx'))) {
-        await processFile(targetPath);
+async function verificationPhase() {
+    console.log("\n🕵️  Phase 3: Verification");
+    const matches = await scanPhase();
+    const remainingLinks = matches.length;
+    
+    console.log(`-------------------------------------------`);
+    console.log(`Remaining 'ibb.co' links: ${remainingLinks}`);
+    
+    if (remainingLinks === 0) {
+        console.log(`✅ SUCCESS: Source code has no remote links.`);
+        return true;
+    } else {
+        console.log(`⚠️  WARNING: ${remainingLinks} links remain.`);
+        return false;
     }
 }
 
 async function main() {
-    console.log("🚀 Starting Simple Image Migration (ESM Mode)...");
-    console.log("Assuming images exist in public/images and updating paths only.");
+    let loop = true;
 
-    for (const targetPath of TARGET_PATHS) {
-        if (fs.existsSync(targetPath)) {
-            await scanAndProcess(targetPath);
+    while (loop) {
+        const matches = await scanPhase();
+        const totalImages = matches.length;
+        console.log(`\n📊 Total Links Found: ${totalImages}`);
+
+        if (totalImages > 0) {
+            await executionPhase(matches);
         } else {
-            console.warn(`⚠️  Path not found: ${targetPath}`);
+            console.log("No remote links found to update.");
+        }
+
+        let verifying = true;
+        while (verifying) {
+            const answer = await askQuestion("\nRun verification check? (Y/N/Quit): ");
+            const choice = answer.trim().toUpperCase();
+
+            if (choice === 'Y') {
+                const isClean = await verificationPhase();
+                if (!isClean) {
+                    const retry = await askQuestion("Retry replacement process? (Y/N): ");
+                    if (retry.trim().toUpperCase() === 'Y') {
+                        verifying = false;
+                        loop = true;
+                    } else {
+                        verifying = false;
+                        loop = false;
+                    }
+                } else {
+                    verifying = false;
+                    loop = false;
+                }
+            } else {
+                verifying = false;
+                loop = false;
+            }
         }
     }
-
-    console.log("\n🎉 All tasks completed! Source code URLs have been updated.");
+    
+    rl.close();
 }
 
 main();

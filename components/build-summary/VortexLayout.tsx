@@ -74,7 +74,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
     return (
         <div className="relative w-full bg-black overflow-hidden flex flex-col items-center justify-start p-20 pb-0">
              {/* Background Spiral - Conic gradients often fail in html2canvas, replacing with radial */}
-            <div id="vortex-bg-gradient" className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1a1a2e_0%,#000000_100%)] opacity-80 pointer-events-none h-full"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1a1a2e_0%,#000000_100%)] opacity-80 pointer-events-none h-full"></div>
             
             <div className="absolute top-10 left-0 right-0 z-50">
                  <SummaryHeader theme="dark" />

@@ -1,59 +1,60 @@
 
 /**
- * 이미지 마이그레이션 스크립트 (ESM 버전)
+ * Image Migration Script with Verification (ESM Version)
  * 
- * 사용법:
- * 1. 프로젝트 루트에서 실행: node tools/migrate-images.js
- * 
- * 기능:
- * - constants, components 폴더 및 App.tsx를 스캔합니다.
- * - ImgBB 이미지 URL에서 고유 Hash를 추출합니다.
- * - public/images/[HASH]-[FILENAME] 형식으로 저장하여 이름 충돌을 방지합니다.
- * - 소스 코드의 URL을 로컬 경로로 일괄 변경합니다.
+ * Usage: node tools/migrate-images.js
  */
 
 import fs from 'fs';
 import path from 'path';
 import https from 'https';
+import readline from 'readline';
 import { fileURLToPath } from 'url';
 
-// ESM 환경에서 __dirname 구현
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 설정
+// Config
 const ROOT_DIR = path.resolve(__dirname, '..');
-
 const TARGET_PATHS = [
     path.join(ROOT_DIR, 'constants'),
     path.join(ROOT_DIR, 'components'),
     path.join(ROOT_DIR, 'App.tsx')
-]; 
+];
 const PUBLIC_IMG_DIR = path.join(ROOT_DIR, 'public', 'images');
 const URL_PREFIX = '/images';
 
-// 정규식: ImgBB URL에서 Hash와 Filename을 그룹으로 캡처
+// Regex: Capture Hash and Filename from ImgBB URL
 const IMAGE_REGEX = /https:\/\/i\.ibb\.co\/([a-zA-Z0-9]+)\/([\w%\-]+)\.(jpg|png|jpeg|gif)/g;
 
-// 폴더 생성
+// CLI Interface
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+const askQuestion = (query) => new Promise(resolve => rl.question(query, resolve));
+
+// Ensure Directory
 if (!fs.existsSync(PUBLIC_IMG_DIR)) {
     fs.mkdirSync(PUBLIC_IMG_DIR, { recursive: true });
 }
+
+// --- Helpers ---
 
 async function downloadImage(url, filename) {
     const filePath = path.join(PUBLIC_IMG_DIR, filename);
 
     if (fs.existsSync(filePath)) {
-        // 이미 존재하면 건너뜀 (중복 다운로드 방지)
-        return;
+        return 'skipped'; // Already exists
     }
 
     return new Promise((resolve, reject) => {
         https.get(url, (res) => {
             if (res.statusCode !== 200) {
-                console.error(`❌ 다운로드 실패: ${url} (Status: ${res.statusCode})`);
+                console.error(`\n❌ Failed to download: ${url} (Status: ${res.statusCode})`);
                 res.resume();
-                resolve();
+                resolve('failed');
                 return;
             }
 
@@ -62,92 +63,192 @@ async function downloadImage(url, filename) {
 
             fileStream.on('finish', () => {
                 fileStream.close();
-                console.log(`✅ 저장됨: ${filename}`);
-                resolve();
+                resolve('downloaded');
             });
 
             fileStream.on('error', (err) => {
-                fs.unlink(filePath, () => {});
-                console.error(`❌ 파일 쓰기 에러 ${filename}:`, err.message);
-                resolve();
+                fs.unlink(filePath, () => {}); // Delete partial file
+                console.error(`\n❌ File write error ${filename}:`, err.message);
+                resolve('failed');
             });
         }).on('error', (err) => {
-            console.error(`❌ 네트워크 에러 ${url}:`, err.message);
-            resolve();
+            console.error(`\n❌ Network error ${url}:`, err.message);
+            resolve('failed');
         });
     });
 }
 
-async function processFile(filePath) {
-    let content = fs.readFileSync(filePath, 'utf8');
-    let hasChanges = false;
-    
-    // 매치된 모든 이미지 찾기
-    const matches = [...content.matchAll(IMAGE_REGEX)];
-    
-    if (matches.length === 0) return;
-
-    console.log(`\n📄 처리 중: ${path.basename(filePath)} (발견된 이미지: ${matches.length}개)`);
-
-    const downloadPromises = [];
-
-    for (const m of matches) {
-        const fullUrl = m[0];
-        const hash = m[1];
-        const name = m[2];
-        const ext = m[3];
-        
-        // 충돌 방지를 위해 해시를 파일명 앞에 붙임
-        const uniqueFilename = `${hash}-${name}.${ext}`;
-        
-        downloadPromises.push(downloadImage(fullUrl, uniqueFilename));
+function scanDirectory(dir, fileList = []) {
+    if (!fs.existsSync(dir)) return fileList;
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+        const fullPath = path.join(dir, file);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+            scanDirectory(fullPath, fileList);
+        } else if ((fullPath.endsWith('.ts') || fullPath.endsWith('.tsx')) && !fullPath.includes('node_modules')) {
+            fileList.push(fullPath);
+        }
     }
-
-    // 다운로드 완료 대기
-    await Promise.all(downloadPromises);
-
-    // 코드 내 URL 교체
-    const newContent = content.replace(IMAGE_REGEX, (fullUrl, hash, name, ext) => {
-        hasChanges = true;
-        const uniqueFilename = `${hash}-${name}.${ext}`;
-        return `${URL_PREFIX}/${uniqueFilename}`;
-    });
-
-    if (hasChanges) {
-        fs.writeFileSync(filePath, newContent, 'utf8');
-        console.log(`✨ 코드 업데이트 완료: ${path.basename(filePath)}`);
-    }
+    return fileList;
 }
 
-async function scanAndProcess(targetPath) {
-    if (!fs.existsSync(targetPath)) return;
-    
-    const stat = fs.statSync(targetPath);
+// --- Main Phases ---
 
-    if (stat.isDirectory()) {
-        const files = fs.readdirSync(targetPath);
-        for (const file of files) {
-            const fullPath = path.join(targetPath, file);
-            await scanAndProcess(fullPath); // 재귀 호출
+async function scanPhase() {
+    console.log("🔍 Phase 1: Scanning files...");
+    let allMatches = [];
+    let filesToScan = [];
+
+    // Gather all target files
+    if (fs.existsSync(path.join(ROOT_DIR, 'App.tsx'))) filesToScan.push(path.join(ROOT_DIR, 'App.tsx'));
+    filesToScan = [...filesToScan, ...scanDirectory(path.join(ROOT_DIR, 'constants'))];
+    filesToScan = [...filesToScan, ...scanDirectory(path.join(ROOT_DIR, 'components'))];
+
+    for (const filePath of filesToScan) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const matches = [...content.matchAll(IMAGE_REGEX)];
+        
+        if (matches.length > 0) {
+            matches.forEach(m => {
+                allMatches.push({
+                    filePath,
+                    fullUrl: m[0],
+                    hash: m[1],
+                    name: m[2],
+                    ext: m[3],
+                    uniqueFilename: `${m[1]}-${m[2]}.${m[3]}`
+                });
+            });
         }
-    } else if (stat.isFile() && (targetPath.endsWith('.ts') || targetPath.endsWith('.tsx'))) {
-        await processFile(targetPath);
+    }
+    return allMatches;
+}
+
+async function executionPhase(matches) {
+    console.log(`\n🚀 Phase 2: Processing ${matches.length} matches...`);
+    
+    let processedCount = 0;
+    let downloadCount = 0;
+    let replacementCount = 0;
+    const total = matches.length;
+
+    // We process sequentially to allow accurate progress tracking
+    // Group by file to minimize file I/O
+    const fileGroups = matches.reduce((acc, curr) => {
+        if (!acc[curr.filePath]) acc[curr.filePath] = [];
+        acc[curr.filePath].push(curr);
+        return acc;
+    }, {});
+
+    for (const filePath of Object.keys(fileGroups)) {
+        let content = fs.readFileSync(filePath, 'utf8');
+        let fileChanged = false;
+        const items = fileGroups[filePath];
+
+        for (const item of items) {
+            // 1. Download
+            const status = await downloadImage(item.fullUrl, item.uniqueFilename);
+            if (status === 'downloaded') downloadCount++;
+            
+            // 2. Replace in content string
+            // Note: Use split/join or replaceAll to ensure all instances of this specific URL are caught
+            if (content.includes(item.fullUrl)) {
+                content = content.replace(item.fullUrl, `${URL_PREFIX}/${item.uniqueFilename}`);
+                fileChanged = true;
+                replacementCount++;
+            }
+            
+            processedCount++;
+            process.stdout.write(`\rProgress: ${processedCount} / ${total} (Downloads: ${downloadCount})`);
+        }
+
+        if (fileChanged) {
+            fs.writeFileSync(filePath, content, 'utf8');
+        }
+    }
+    console.log(`\n\n✅ Execution Complete.`);
+    console.log(`- Total Downloads: ${downloadCount}`);
+    console.log(`- Total Replacements: ${replacementCount}`);
+}
+
+async function verificationPhase() {
+    console.log("\n🕵️  Phase 3: Verification");
+    
+    const matches = await scanPhase();
+    
+    // Check 1: Are there any ibb.co links left in code?
+    const remainingLinks = matches.length;
+    
+    // Check 2: Do the files actually exist in /public/images?
+    // We scan specifically for things that *look* like they should have been converted
+    // but we can't easily reverse-engineer the regex if the link is already gone.
+    // So we just check if the detected 'matches' (which are ibb.co links) are 0.
+    
+    console.log(`-------------------------------------------`);
+    console.log(`Remaining 'ibb.co' links in code: ${remainingLinks}`);
+    
+    if (remainingLinks === 0) {
+        console.log(`✅ SUCCESS: No remote image links found in source code.`);
+        return true;
+    } else {
+        console.log(`⚠️  WARNING: ${remainingLinks} links were NOT converted.`);
+        matches.forEach(m => console.log(`   - ${path.basename(m.filePath)}: ${m.fullUrl}`));
+        return false;
     }
 }
 
 async function main() {
-    console.log("🚀 이미지 마이그레이션 시작 (ESM 모드)...");
-    console.log(`📂 저장 경로: ${PUBLIC_IMG_DIR}`);
-    
-    for (const targetPath of TARGET_PATHS) {
-        if (fs.existsSync(targetPath)) {
-            await scanAndProcess(targetPath);
+    let loop = true;
+
+    while (loop) {
+        // 1. Scan
+        const matches = await scanPhase();
+        const totalImages = matches.length;
+
+        console.log(`\n📊 Total Targets Identified: ${totalImages}`);
+
+        if (totalImages === 0) {
+            console.log("No images to migrate. Entering verification...");
         } else {
-            console.warn(`⚠️  경로를 찾을 수 없음: ${targetPath}`);
+            // 2. Execute
+            await executionPhase(matches);
+        }
+
+        // 3. Verify loop
+        let verifying = true;
+        while (verifying) {
+            const answer = await askQuestion("\nRun verification check now? (Y/N/Quit): ");
+            const choice = answer.trim().toUpperCase();
+
+            if (choice === 'Y') {
+                const isClean = await verificationPhase();
+                if (!isClean) {
+                    const retry = await askQuestion("Incomplete migration detected. Retry download & replacement? (Y/N): ");
+                    if (retry.trim().toUpperCase() === 'Y') {
+                        verifying = false; // Break verify loop, restart main loop
+                        loop = true; 
+                    } else {
+                        console.log("Exiting with remaining items.");
+                        verifying = false;
+                        loop = false;
+                    }
+                } else {
+                    console.log("All clear. Exiting.");
+                    verifying = false;
+                    loop = false;
+                }
+            } else if (choice === 'Q' || choice === 'QUIT') {
+                verifying = false;
+                loop = false;
+            } else {
+                verifying = false;
+                loop = false;
+            }
         }
     }
     
-    console.log("\n🎉 모든 작업이 완료되었습니다! 이제 Vercel에 배포해도 이미지가 안전합니다.");
+    rl.close();
 }
 
 main();
