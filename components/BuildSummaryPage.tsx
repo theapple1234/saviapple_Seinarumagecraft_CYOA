@@ -262,9 +262,9 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                 position: relative;
                                 top: -7.5px;
                             }
-                            /* Extra shift for Vortex stage numbers (total -14.5px relative to normal) */
+                            /* Extra shift for Vortex stage numbers (total -22.5px relative to normal) */
                             .vortex-stage-number {
-                                top: -14.5px !important;
+                                top: -22.5px !important;
                             }
                         `;
                         clonedDoc.head.appendChild(style);
