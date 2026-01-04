@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { CharacterProvider, useCharacterContext } from './context/CharacterContext';
 import { StatsFooter } from './components/StatsFooter';
 import { SectionHeader } from './components/ui';
@@ -338,6 +339,7 @@ const App: React.FC = () => {
   return (
     <CharacterProvider>
       <MainApp />
+      <Analytics />
     </CharacterProvider>
   );
 };
