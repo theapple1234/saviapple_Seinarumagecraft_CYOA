@@ -16,8 +16,8 @@ import { CompellingWillSigilCard, SigilColor } from '../CompellingWillSigilCard'
 import { WeaponSelectionModal } from '../WeaponSelectionModal';
 
 
-const sigilImageMap: {[key: string]: string} = { 'kaarn.png': 'kaarn', 'purth.png': 'purth', 'juathas.png': 'juathas', 'xuth.png': 'xuth', 'sinthru.png': 'sinthru', 'lekolu.png': 'lekolu' };
-const getSigilTypeFromImage = (imageSrc: string): string | null => {
+const sigilImageMap: {[key: string]: keyof SigilCounts} = { 'kaarn.png': 'kaarn', 'purth.png': 'purth', 'juathas.png': 'juathas', 'xuth.png': 'xuth', 'sinthru.png': 'sinthru', 'lekolu.png': 'lekolu' };
+const getSigilTypeFromImage = (imageSrc: string): keyof SigilCounts | null => {
     for (const key in sigilImageMap) { if (imageSrc.endsWith(key)) { return sigilImageMap[key]; } }
     return null;
 }
@@ -157,7 +157,7 @@ export const CompellingWillSection: React.FC = () => {
         if (kpPaidNodes.has(String(sigil.id))) return false;
 
         const sigilType = getSigilTypeFromImage(sigil.imageSrc);
-        if (sigilType && ctx.availableSigilCounts[sigilType as keyof SigilCounts] < 1) return true;
+        if (sigilType && ctx.availableSigilCounts[sigilType] < 1) return true;
 
         return false;
     };

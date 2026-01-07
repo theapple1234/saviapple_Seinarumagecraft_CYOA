@@ -27,6 +27,11 @@ html[lang="ko"] .font-mono {
     letter-spacing: 0.02em !important;
 }
 
+/* General Pretendard class without weight forcing */
+.font-pretendard {
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
 /* Increase base font size by 10% for Korean to improve legibility of Pretendard */
 html[lang="ko"] {
     font-size: 110%;

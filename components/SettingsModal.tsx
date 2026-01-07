@@ -602,6 +602,7 @@ export const SettingsModal: React.FC = () => {
 
     return (
         <div className={`fixed inset-0 z-[300] flex items-center justify-center p-4 md:p-6 transition-all duration-300 ${isSettingsOpen ? 'bg-black/80 backdrop-blur-sm opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileChange} />
             <div 
                 className={`
                     w-full max-w-4xl h-[600px] md:h-[500px] bg-[#0b0f17] border border-cyan-500/20 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col md:flex-row relative

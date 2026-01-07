@@ -23,7 +23,7 @@ declare global {
 }
 
 const SECRET_BGM_ID = 'xvvY9vA9X78';
-const SECRET_START_TIME = 22;
+const SECRET_START_TIME = 21;
 
 export const BackgroundMusic: React.FC = () => {
   const { volume, setVolume, isSecretTransitionActive, isSecretMusicMode, bgmVideoId } = useCharacterContext();

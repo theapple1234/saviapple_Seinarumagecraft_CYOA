@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useCharacterContext } from '../context/CharacterContext';
 import * as Constants from '../constants';
@@ -254,7 +255,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                         clonedElement.style.width = `${captureWidth}px`;
                     
                         const style = clonedDoc.createElement('style');
-                        style.innerHTML = `
+                        let css = `
                             h1, h2, h3, h4, h5, h6, p, label, button, a, div > span:not(.absolute) {
                                 position: relative;
                                 top: -7.5px;
@@ -262,10 +263,20 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                             .vortex-stage-number {
                                 top: -22.5px !important;
                             }
-                            .build-summary-count-badge {
-                                transform: translateY(-7px) !important;
+                            .build-summary-title {
+                                top: -14.5px !important;
                             }
                         `;
+                        
+                        if (template === 'vortex') {
+                            css += `
+                                .build-summary-count-badge {
+                                    transform: translateY(-7px) !important;
+                                }
+                            `;
+                        }
+
+                        style.innerHTML = css;
                         clonedDoc.head.appendChild(style);
 
                         const traitsToAdjust = [
@@ -344,15 +355,22 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                         clonedNode.style.overflow = 'visible';
                                      }
                                      const style = clonedDoc.createElement('style');
-                                     style.innerHTML = `
+                                     let css = `
                                          h1, h2, h3, h4, h5, h6, p, label, button, a, div > span:not(.absolute) {
                                              position: relative;
                                              top: -7.5px;
                                          }
-                                         .build-summary-count-badge {
-                                            transform: translateY(-7px) !important;
-                                         }
                                      `;
+
+                                     if (template === 'vortex') {
+                                        css += `
+                                            .build-summary-count-badge {
+                                                transform: translateY(-7px) !important;
+                                            }
+                                        `;
+                                     }
+
+                                     style.innerHTML = css;
                                      clonedDoc.head.appendChild(style);
                                  }
                              });
@@ -412,7 +430,6 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
         const serializableCtx = ctx.serializeState();
         const refBuilds = localStorage.getItem(STORAGE_KEY) || '{}';
         const fullSaveData = {
-            // FIX: Use serializableCtx instead of non-existent mainState
             character: serializableCtx,
             reference: JSON.parse(refBuilds),
             version: '1.0'

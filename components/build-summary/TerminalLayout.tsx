@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { SummaryHeader, FamilyDetailCard, HousingDetailCard, CustomSpellCard, formatCostDisplay } from './BuildSummaryShared';
 
@@ -22,7 +21,7 @@ export const TerminalLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' 
             {items.map((item: any, idx: number) => (
                 <div key={`${item.id}-${idx}`} className={`border ${item.isLostPower ? 'border-green-400 bg-green-900/30' : 'border-green-500/30 bg-green-900/10'} p-2 flex items-start gap-3 hover:bg-green-900/20 transition-colors`}>
                     <div 
-                        className={`w-12 h-12 flex-shrink-0 border border-green-500/20 bg-black ${theme.imgFilter}`}
+                        className={`w-[72px] h-[72px] flex-shrink-0 border border-green-500/20 bg-black ${theme.imgFilter}`}
                         style={{
                             backgroundImage: `url(${item.imageSrc})`,
                             backgroundSize: 'cover',
@@ -31,7 +30,7 @@ export const TerminalLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' 
                         }}
                     ></div>
                     <div className="flex-grow min-w-0">
-                        <p className="text-lg font-bold truncate text-green-500 mb-0.5 leading-[2.5]">{item.title}</p>
+                        <p className="text-xs font-bold truncate text-green-500 mb-0.5 leading-[2.5]">{item.title}</p>
                         <p className="text-[9px] opacity-60 truncate leading-[2.5]">ID: {item.id}</p>
                         {/* Cost Display Added Here */}
                         {item.cost && <p className="text-[9px] text-green-400 mt-0.5 leading-[2.5]">{formatCostDisplay(item.cost, language as 'en' | 'ko')}</p>}
@@ -68,7 +67,7 @@ export const TerminalLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' 
                             {section.familyDetails?.length > 0 && (
                                 <div className="space-y-2 border border-green-900/50 p-2">
                                     <h5 className="font-galmuri text-xs text-green-700 font-bold uppercase tracking-widest leading-[2.5]">
-                                        {language === 'ko' ? '&gt;&gt; LINEAGE_DATA' : '&gt;&gt; LINEAGE_DATA'}
+                                        {language === 'ko' ? '>> LINEAGE_DATA' : '>> LINEAGE_DATA'}
                                     </h5>
                                     {section.familyDetails.map((m: any) => <FamilyDetailCard key={m.id} member={m} theme={theme} />)}
                                 </div>
@@ -76,7 +75,7 @@ export const TerminalLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' 
                             {section.housingDetails?.length > 0 && (
                                 <div className="space-y-2 border border-green-900/50 p-2">
                                     <h5 className="font-galmuri text-xs text-green-700 font-bold uppercase tracking-widest leading-[2.5]">
-                                        {language === 'ko' ? '&gt;&gt; ASSET_ALLOCATION' : '&gt;&gt; ASSET_ALLOCATION'}
+                                        {language === 'ko' ? '>> ASSET_ALLOCATION' : '>> ASSET_ALLOCATION'}
                                     </h5>
                                     {section.housingDetails.map((h: any) => <HousingDetailCard key={h.id} home={h} theme={theme} />)}
                                 </div>

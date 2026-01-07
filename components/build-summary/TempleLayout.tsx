@@ -12,7 +12,7 @@ export const TempleLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' }>
         imgFilter: "sepia-[0.3]",
         isLight: true,
         fontHead: "font-cinzel",
-        fontBody: "font-serif"
+        fontBody: language === 'ko' ? "font-pretendard" : "font-serif"
     };
 
     const renderItemCard = (item: any, idx: number) => (
@@ -37,7 +37,7 @@ export const TempleLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' }>
                 )}
             </div>
             <div className="text-center mt-3 p-2 bg-white border border-amber-100 shadow-sm rounded-sm">
-                <h4 className="font-cinzel font-bold text-lg text-black">{item.title}</h4>
+                <h4 className="font-cinzel font-bold text-sm text-black">{item.title}</h4>
                 {item.cost && <p className="text-[9px] text-amber-700/70 font-serif italic mt-1">{formatCostDisplay(item.cost, language as 'en' | 'ko')}</p>}
                 {item.count && <span className="block build-summary-count-badge text-[10px] text-amber-600 font-bold mt-1">Quantity: {item.count}</span>}
                 {item.uniformName && <span className="block text-[9px] text-amber-900/80 font-bold mt-1 leading-[2.5]">Costume: {item.uniformName}</span>}
@@ -69,7 +69,7 @@ export const TempleLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' }>
                                 {section.housingDetails?.length > 0 && (
                                     <div className="space-y-4">
                                         <h5 className={`font-cinzel ${language === 'ko' ? 'text-3xl' : 'text-xl'} text-amber-950 font-bold uppercase tracking-widest border-b-2 border-amber-100 pb-2`}>
-                                            {language === 'ko' ? '영지' : 'Estates'}
+                                            {language === 'ko' ? '부동산' : 'Estates'}
                                         </h5>
                                         {section.housingDetails.map((h: any) => <HousingDetailCard key={h.id} home={h} theme={theme} />)}
                                     </div>
@@ -96,7 +96,7 @@ export const TempleLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' }>
                                                 </div>
                                             )}
                                             {group.isMagicianActive && (
-                                                <span className="text-[10px] font-bold text-purple-700/80 uppercase tracking-widest font-serif flex items-center gap-1 ml-2 border border-purple-200 px-1.5 py-0.5 rounded bg-purple-50">
+                                                <span className="text-[10px] font-bold text-purple-700/80 uppercase tracking-widest font-serif flex items-center gap-1 ml-2">
                                                     <span className="text-purple-400">✦</span> {language === 'ko' ? '마법사' : 'Magician'}
                                                 </span>
                                             )}

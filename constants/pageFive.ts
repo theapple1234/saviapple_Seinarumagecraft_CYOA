@@ -323,7 +323,7 @@ export const CAREER_GOALS_DATA_KO: { proSports: ChoiceItem[], general: ChoiceIte
     ],
     finishingTouches: [
         {
-            id: 'moving_out', title: '분가', cost: 'Cost: Varies',
+            id: 'moving_out', title: '분가', cost: '소모값 변동',
             description: "가족을 따나서 살고 싶다면 새 집을 살 수 있습니다. {i}1페이지{/i}에서 집의 종류와 {w}업그레이드{/w}를 결정할 수 있습니다. 처음은 무료이고, 그 후로는 행운 점수 3점이 필요합니다. 아니면 부모님께 휴가지를 물려받을 수도 있습니다.",
             imageSrc: '/images/KpMsN670-b1.jpg'
         },
@@ -333,7 +333,7 @@ export const CAREER_GOALS_DATA_KO: { proSports: ChoiceItem[], general: ChoiceIte
             imageSrc: '/images/BV0SBs3C-b2.png'
         },
         {
-            id: 'mentor_career', title: '멘토', cost: 'Cost: Varies',
+            id: 'mentor_career', title: '멘토', cost: '소모값 변동',
             description: "당신이 고르지 않았던 {w}클래스메이트{/w}를 고르거나, 새로 클래스메이트를 만들 수 있습니다. 이 때, {fp}행운 점수가 1점{/fp} 적게 소모됩니다 (다른 비용 감소는 적용되지 않습니다). 당신이 고른 사람은 공손하게 당신을 따르는 제자가 됩니다. 당신이 시킨 작은 일들을 이것저것 하면서, 당신의 경험과 지혜를 배우고 익혀 나갈 거에요.",
             imageSrc: '/images/0y5PF52X-b3.png'
         },

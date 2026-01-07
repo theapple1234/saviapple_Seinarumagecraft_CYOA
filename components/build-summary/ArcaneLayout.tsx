@@ -34,7 +34,7 @@ export const ArcaneLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' }>
                         )}
                     </div>
                     <div className="p-2 flex flex-col flex-grow">
-                        <h4 className="font-cinzel text-[15px] font-bold text-gray-300 group-hover:text-white leading-[2.5] mb-1 truncate">{item.title}</h4>
+                        <h4 className="font-cinzel text-xs font-bold text-gray-300 group-hover:text-white leading-[2.5] mb-1 truncate">{item.title}</h4>
                         {item.cost && <p className="text-[9px] text-cyan-500/60 font-mono mt-auto leading-[2.5]">{formatCostDisplay(item.cost, language as 'en' | 'ko')}</p>}
                         {item.assignedName && (
                             <div className="mt-1 pt-1 border-t border-white/5">
@@ -107,7 +107,7 @@ export const ArcaneLayout: React.FC<{ sections: any[], language?: 'en' | 'ko' }>
                                             </div>
                                         )}
                                         {group.isMagicianActive && (
-                                             <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1 ml-2 border border-purple-500/30 px-1.5 py-0.5 rounded bg-purple-900/10">
+                                             <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1 ml-2">
                                                 <span className="text-purple-500 text-xs">✦</span> {language === 'ko' ? '마법사' : 'Magician'}
                                             </span>
                                         )}

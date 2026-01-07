@@ -1,3 +1,4 @@
+
 import React from 'react';
 import * as Constants from '../../constants';
 import { SummaryHeader } from './BuildSummaryShared';
@@ -186,7 +187,7 @@ export const VortexLayout: React.FC<{ sections: any[], ctx: ICharacterContext, n
                                                     <span className="absolute build-summary-count-badge -bottom-1 -right-1 z-50 bg-purple-600 text-white text-[12px] font-bold px-2 py-0.5 rounded-full border-2 border-black shadow-md">x{item.count}</span>
                                                 )}
                                             </div>
-                                            <div className="mt-3 text-[15px] text-purple-200 text-center w-40 whitespace-normal leading-loose group-hover:text-white transition-colors z-20 min-h-[2.5em] flex flex-col items-center justify-center drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                                            <div className="mt-3 text-[10px] text-purple-200 text-center w-40 whitespace-normal leading-loose group-hover:text-white transition-colors z-20 min-h-[2.5em] flex flex-col items-center justify-center drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
                                                 <span>{item.title}</span>
                                                 {item.isBoosted && (
                                                     <span className="text-[9px] text-amber-400 font-bold block mt-0.5 w-full whitespace-normal leading-loose">BOOSTED</span>

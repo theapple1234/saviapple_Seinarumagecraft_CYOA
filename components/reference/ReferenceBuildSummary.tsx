@@ -1,3 +1,4 @@
+
 import React from 'react';
 import * as Constants from '../../constants';
 import type { BuildType, AllBuilds } from '../../types';
@@ -37,7 +38,7 @@ const renderItem = (id: string, pool: any[], label: string, theme: any) => {
             </div>
             <div>
                 <p className={`text-[10px] ${theme.textAccent} ${theme.fontBody} tracking-widest uppercase`}>{label}</p>
-                <p className={`text-[21px] ${theme.fontHead} font-bold ${theme.textMain} uppercase`}>{item.title}</p>
+                <p className={`text-sm ${theme.fontHead} font-bold ${theme.textMain} uppercase`}>{item.title}</p>
             </div>
         </div>
     );
@@ -66,7 +67,7 @@ const renderGrid = (ids: string[] | Set<string> | Map<string, any>, pool: any[],
                                 />
                             </div>
                             <div className="min-w-0">
-                                <p className={`text-[16.5px] font-bold ${theme.textMain} truncate ${theme.fontBody}`}>{item.title}</p>
+                                <p className={`text-[10px] font-bold ${theme.textMain} truncate ${theme.fontBody}`}>{item.title}</p>
                                 {count && count > 1 && <p className={`text-[9px] ${theme.textAccent} ${theme.fontTech}`}>x{count}</p>}
                             </div>
                         </div>

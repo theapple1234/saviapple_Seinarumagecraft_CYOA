@@ -19,8 +19,8 @@ import { CompanionSelectionModal } from '../SigilTreeOptionCard';
 import { BeastSelectionModal } from '../BeastSelectionModal';
 import { VehicleSelectionModal } from '../VehicleSelectionModal';
 
-const sigilImageMap: {[key: string]: string} = { 'kaarn.png': 'kaarn', 'purth.png': 'purth', 'juathas.png': 'juathas', 'xuth.png': 'xuth', 'sinthru.png': 'sinthru', 'lekolu.png': 'lekolu' };
-const getSigilTypeFromImage = (imageSrc: string): string | null => {
+const sigilImageMap: {[key: string]: keyof SigilCounts} = { 'kaarn.png': 'kaarn', 'purth.png': 'purth', 'juathas.png': 'juathas', 'xuth.png': 'xuth', 'sinthru.png': 'sinthru', 'lekolu.png': 'lekolu' };
+const getSigilTypeFromImage = (imageSrc: string): keyof SigilCounts | null => {
     for (const key in sigilImageMap) { if (imageSrc.endsWith(key)) { return sigilImageMap[key]; } }
     return null;
 }
@@ -199,7 +199,7 @@ export const RighteousCreationSection: React.FC = () => {
 
         const sigilType = getSigilTypeFromImage(sigil.imageSrc);
         const sigilCost = sigilType ? 1 : 0;
-        if (sigilType && ctx.availableSigilCounts[sigilType as keyof SigilCounts] < sigilCost) return true;
+        if (sigilType && ctx.availableSigilCounts[sigilType] < sigilCost) return true;
 
         return false;
     };

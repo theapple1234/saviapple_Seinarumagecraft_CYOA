@@ -1,3 +1,4 @@
+
 import React from 'react';
 import * as Constants from '../../constants';
 import { renderFormattedText } from '../ui';
@@ -64,7 +65,7 @@ export const SummaryHeader: React.FC<{ theme: 'dark' | 'light' | 'cyber', langua
          return (
             <div className="border-b border-green-500/50 pb-4 mb-8 flex justify-between items-end">
                 <div>
-                    <h1 className={`${isKo ? 'text-4xl' : 'text-3xl'} font-bold tracking-tighter text-green-500 font-galmuri leading-[2.5]`}>{titleCyber}</h1>
+                    <h1 className={`build-summary-title ${isKo ? 'text-4xl' : 'text-3xl'} font-bold tracking-tighter text-green-500 font-galmuri leading-[2.5]`}>{titleCyber}</h1>
                     <p className="text-[10px] text-green-700 font-galmuri mt-1 uppercase tracking-widest leading-[2.5]">Original by NXTUB | Interactive by SAVIAPPLE</p>
                 </div>
             </div>
@@ -73,7 +74,7 @@ export const SummaryHeader: React.FC<{ theme: 'dark' | 'light' | 'cyber', langua
     if (theme === 'light') {
         return (
             <div className="flex flex-col items-center mb-10 border-b-2 border-amber-200 pb-6">
-                <h1 className={`font-cinzel ${isKo ? 'text-6xl' : 'text-5xl'} font-bold text-slate-900 tracking-wider`}>{titleLight}</h1>
+                <h1 className={`build-summary-title font-cinzel ${isKo ? 'text-6xl' : 'text-5xl'} font-bold text-slate-900 tracking-wider`}>{titleLight}</h1>
                 <p className="font-serif text-[10px] text-slate-500 uppercase tracking-[0.2em] mt-3">Original by NXTUB | Interactive by SAVIAPPLE</p>
             </div>
         );
@@ -81,7 +82,7 @@ export const SummaryHeader: React.FC<{ theme: 'dark' | 'light' | 'cyber', langua
     // Dark/Default
     return (
         <div className="flex flex-col items-center mb-10 border-b border-cyan-900/30 pb-6">
-             <h1 className={`font-cinzel ${isKo ? 'text-5xl' : 'text-4xl'} font-bold text-white tracking-[0.1em] text-shadow-glow`}>{titleDefault}</h1>
+             <h1 className={`build-summary-title font-cinzel ${isKo ? 'text-5xl' : 'text-4xl'} font-bold text-white tracking-[0.1em] text-shadow-glow`}>{titleDefault}</h1>
              <p className="font-cinzel text-[10px] text-gray-500 mt-3 tracking-[0.3em] uppercase">Original by NXTUB | Interactive by SAVIAPPLE</p>
         </div>
     );
@@ -206,7 +207,7 @@ export const CustomSpellCard: React.FC<{ spell: any, index: number, theme: any }
                 <div className={`w-8 h-8 flex items-center justify-center rounded-full border ${borderColor} ${isMilgrath ? 'bg-white/10' : 'bg-transparent'}`}>
                     <span className={`${theme.fontHead} font-bold text-lg ${titleColor}`}>{index + 1}</span>
                 </div>
-                <h4 className={`${theme.fontHead} font-bold text-[21px] tracking-wide ${titleColor}`}>
+                <h4 className={`${theme.fontHead} font-bold text-sm tracking-wide ${titleColor}`}>
                     CUSTOM SPELL
                 </h4>
             </div>
