@@ -13,6 +13,10 @@ import type { AllBuilds, BuildType } from '../types';
 
 type TemplateType = 'default' | 'temple' | 'vortex' | 'terminal';
 const STORAGE_KEY = 'seinaru_magecraft_builds';
+const DB_NAME = 'SeinaruMagecraftFullSaves';
+const DB_VERSION = 2;
+const SLOTS_PER_PAGE = 10;
+const TOTAL_PAGES = 10;
 
 // Add type declaration for html2canvas, JSZip and FileSaver from CDN
 declare global {
@@ -24,12 +28,20 @@ declare global {
   }
 }
 
+interface SaveSlot {
+    id: number;
+    name: string;
+    timestamp: string;
+    character: any;
+    reference: any;
+    version: string;
+}
+
 // -- Helper: Quick Point Calculation for Reference Items --
 const calculateReferencePoints = (type: BuildType, data: any): number => {
     let total = 0;
     const { category, size, perks, traits, bpSpent, magicalBeastCount } = data;
     
-    // Normalize perks to Map if it's an array/object
     const perkMap = perks instanceof Map ? perks : new Map(Array.isArray(perks) ? perks : []);
     const traitSet = traits instanceof Set ? traits : new Set(Array.isArray(traits) ? traits : []);
     const categories = Array.isArray(category) ? category : (category ? [category] : []);
@@ -48,7 +60,6 @@ const calculateReferencePoints = (type: BuildType, data: any): number => {
             }
         });
     } else if (type === 'weapons') {
-        // No category cost
         perkMap.forEach((count: number, id: string) => {
             const perk = Constants.WEAPON_PERKS.find(p => p.id === id);
             if (perk) total += (perk.cost ?? 0) * count;
@@ -85,7 +96,6 @@ const calculateReferencePoints = (type: BuildType, data: any): number => {
         }
     }
 
-    // Apply Sun Forger Discount
     total -= (bpSpent || 0) * 2;
     return total;
 };
@@ -121,7 +131,6 @@ const GeneratingOverlay: React.FC<{ template: TemplateType }> = ({ template }) =
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className={`w-12 h-12 ${bgClass} rounded-full animate-pulse`}></div>
                 </div>
-                {/* Rotating Ring Reverse */}
                 <div className={`absolute -inset-4 border border-dashed ${borderClass} rounded-full opacity-30 animate-spin-slow-reverse`}></div>
             </div>
             
@@ -137,20 +146,23 @@ const GeneratingOverlay: React.FC<{ template: TemplateType }> = ({ template }) =
 
 export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const ctx = useCharacterContext();
+    const isSunForgerActive = ctx.selectedStarCrossedLovePacts.has('sun_forgers_boon');
     const summaryContentRef = useRef<HTMLDivElement>(null);
     const { sections } = useBuildSummaryData(ctx);
-    // FIX: Replaced setTemplate with useState to fix 'used before declaration' error
     const [template, setTemplate] = useState<TemplateType>('default');
     const [showTemplateSelector, setShowTemplateSelector] = useState(false);
     const [showDownloadMenu, setShowDownloadMenu] = useState(false);
     const [customImage, setCustomImage] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     
-    // State for Reference Page Append
     const [referenceBuilds, setReferenceBuilds] = useState<AllBuilds>({ companions: {}, weapons: {}, beasts: {}, vehicles: {} });
     const [showReferenceAppendix, setShowReferenceAppendix] = useState(false);
 
-    // Load Reference Builds
+    // Slot Browser Save States
+    const [isSlotOverlayOpen, setIsSlotOverlayOpen] = useState(false);
+    const [slotsData, setSlotsData] = useState<Record<number, SaveSlot>>({});
+    const [currentSlotPage, setCurrentSlotPage] = useState(1);
+
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -168,11 +180,87 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
         }
     }, []);
 
-    const currentBuildName = "My Build"; // Placeholder
     const pointsSpent = 100 - ctx.blessingPoints; 
-    const isSunForgerActive = ctx.selectedStarCrossedLovePacts.has('sun_forgers_boon');
 
-    // -- Helper: Generate Filename with User Input --
+    // --- Slot DB Interaction ---
+    const initDB = () => {
+        return new Promise<IDBDatabase>((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                if (!db.objectStoreNames.contains('save_slots')) {
+                    db.createObjectStore('save_slots', { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    };
+
+    const fetchSlots = async () => {
+        try {
+            const db = await initDB();
+            const tx = db.transaction('save_slots', 'readonly');
+            const store = tx.objectStore('save_slots');
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const slots = request.result as SaveSlot[];
+                const slotMap: Record<number, SaveSlot> = {};
+                slots.forEach(slot => { slotMap[slot.id] = slot; });
+                setSlotsData(slotMap);
+            };
+        } catch (error) {
+            console.error("Error fetching slots:", error);
+        }
+    };
+
+    const handleSaveToSlot = async (slotId: number) => {
+        if (slotsData[slotId]) {
+            if (!confirm(ctx.language === 'en' ? `Overwrite Slot ${slotId}?` : `${slotId}번 슬롯을 덮어쓰시겠습니까?`)) return;
+        }
+        const buildName = prompt(ctx.language === 'en' ? "Enter a name for this save:" : "저장할 파일의 이름을 입력하세요:");
+        if (!buildName) return;
+
+        const saveData: SaveSlot = {
+            id: slotId,
+            name: buildName,
+            timestamp: new Date().toISOString(),
+            character: ctx.serializeState(),
+            reference: JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'),
+            version: '1.0'
+        };
+
+        try {
+            const db = await initDB();
+            const tx = db.transaction('save_slots', 'readwrite');
+            await new Promise<void>((resolve, reject) => {
+                const req = tx.objectStore('save_slots').put(saveData);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+            alert(ctx.language === 'en' ? "Saved successfully." : "저장되었습니다.");
+            fetchSlots();
+        } catch (error: any) {
+            alert("Error: " + error.message);
+        }
+    };
+
+    const handleDeleteSlot = async (slotId: number) => {
+        if (!confirm(ctx.language === 'en' ? "Delete this save?" : "정말 삭제하시겠습니까?")) return;
+        try {
+            const db = await initDB();
+            const tx = db.transaction('save_slots', 'readwrite');
+            await new Promise<void>((resolve, reject) => {
+                const req = tx.objectStore('save_slots').delete(slotId);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+            fetchSlots();
+        } catch (error: any) {
+            alert("Error: " + error.message);
+        }
+    };
+
     const generateDownloadFilename = () => {
         const wantToName = window.confirm(ctx.language === 'ko' ? "파일 이름을 지정하시겠습니까?" : "Do you want to enter a build name for this file?");
         let fileNameBase = "";
@@ -180,7 +268,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
         if (wantToName) {
             const inputName = window.prompt(ctx.language === 'ko' ? "이름 입력:" : "Enter build name:");
             if (inputName && inputName.trim()) {
-                 const safeName = inputName.trim().replace(/[\\/:*?"<>|]/g, '_'); // Sanitize illegal chars
+                 const safeName = inputName.trim().replace(/[\\/:*?"<>|]/g, '_'); 
                  fileNameBase = `Build_${safeName}`;
             }
         }
@@ -216,7 +304,6 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
             return;
         }
 
-        // Generate Filename first so we don't interrupt the spinner later
         const baseName = generateDownloadFilename();
 
         setShowDownloadMenu(false);
@@ -224,19 +311,13 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
         const bgColor = template === 'temple' ? '#f8f5f2' : '#000000';
 
         try {
-            // Wait for fonts to be ready to ensure text renders correctly
             await document.fonts.ready;
-
-            // 1. Capture Main Build
-            // Ensure appendix is hidden first to get a clean main build image
             if (showReferenceAppendix) {
                 setShowReferenceAppendix(false);
-                await new Promise(resolve => setTimeout(resolve, 300)); // Allow DOM update
+                await new Promise(resolve => setTimeout(resolve, 300)); 
             }
             
             const element = summaryContentRef.current;
-            
-            // Calculate a sufficiently wide viewport to prevent text wrapping if font fallback occurs
             const captureWidth = Math.max(element.scrollWidth, 1600); 
 
             const options: any = {
@@ -271,7 +352,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                         if (template === 'vortex') {
                             css += `
                                 .build-summary-count-badge {
-                                    transform: translateY(-7px) !important;
+                                    transform: translateY(-14px) !important;
                                 }
                             `;
                         }
@@ -322,10 +403,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 downloadImage(mainCanvas, `${baseName}.png`);
             } else {
                 const zip = new window.JSZip();
-                
-                if (mainBlob) {
-                    zip.file("Full_Build.png", mainBlob);
-                }
+                if (mainBlob) zip.file("Full_Build.png", mainBlob);
 
                 const hasReferenceContent = Object.values(referenceBuilds).some(cat => Object.keys(cat).length > 0);
                 
@@ -355,22 +433,12 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                         clonedNode.style.overflow = 'visible';
                                      }
                                      const style = clonedDoc.createElement('style');
-                                     let css = `
+                                     style.innerHTML = `
                                          h1, h2, h3, h4, h5, h6, p, label, button, a, div > span:not(.absolute) {
                                              position: relative;
                                              top: -7.5px;
                                          }
                                      `;
-
-                                     if (template === 'vortex') {
-                                        css += `
-                                            .build-summary-count-badge {
-                                                transform: translateY(-7px) !important;
-                                            }
-                                        `;
-                                     }
-
-                                     style.innerHTML = css;
                                      clonedDoc.head.appendChild(style);
                                  }
                              });
@@ -395,43 +463,11 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
         }
     };
     
-    const handleSaveToBrowser = () => {
-        const buildName = prompt(ctx.language === 'ko' ? "저장할 빌드의 이름을 입력하세요:" : "Enter a name for this build:");
-        if (!buildName || buildName.trim() === '') return;
-        const serializableCtx = ctx.serializeState();
-        const refBuilds = localStorage.getItem(STORAGE_KEY) || '{}';
-        const fullSaveData = {
-            name: buildName,
-            timestamp: new Date().toISOString(),
-            character: serializableCtx,
-            reference: JSON.parse(refBuilds),
-            version: '1.0'
-        };
-        const dbRequest = indexedDB.open('SeinaruMagecraftFullSaves', 1);
-        dbRequest.onupgradeneeded = (event) => {
-            const db = (event.target as IDBOpenDBRequest).result;
-            if (!db.objectStoreNames.contains('saves')) {
-                db.createObjectStore('saves', { keyPath: 'name' });
-            }
-        };
-        dbRequest.onsuccess = (event) => {
-            const db = (event.target as IDBOpenDBRequest).result;
-            const transaction = db.transaction('saves', 'readwrite');
-            const store = transaction.objectStore('saves');
-            const putRequest = store.put(fullSaveData);
-            putRequest.onsuccess = () => alert(ctx.language === 'ko' ? `"${buildName}" 빌드가 브라우저에 저장되었습니다!` : `Build "${buildName}" saved successfully!`);
-            putRequest.onerror = () => alert(`Error saving build: ${putRequest.error?.message}`);
-        };
-    };
-
     const handleSaveToFile = () => {
         const filename = generateDownloadFilename();
-
-        const serializableCtx = ctx.serializeState();
-        const refBuilds = localStorage.getItem(STORAGE_KEY) || '{}';
         const fullSaveData = {
-            character: serializableCtx,
-            reference: JSON.parse(refBuilds),
+            character: ctx.serializeState(),
+            reference: JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'),
             version: '1.0'
         };
         const blob = new Blob([JSON.stringify(fullSaveData, null, 2)], { type: 'application/json' });
@@ -451,7 +487,6 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
 
     const containerBgClass = template === 'temple' ? 'bg-[#f8f5f2]' : (template === 'default' ? 'bg-[#0a0f1e]' : 'bg-black');
     
-    // Theme colors for Appendix Header
     const appendixHeaderClass = 
         template === 'terminal' ? 'text-green-500 border-green-500/50' :
         template === 'temple' ? 'text-amber-800 border-amber-800/30' :
@@ -487,7 +522,6 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                     <button 
                         onClick={onClose} 
                         className="group flex items-center justify-center w-8 h-8 rounded-full border border-gray-700 hover:border-red-500 transition-colors"
-                        aria-label="Close Summary"
                     >
                         <span className="text-gray-400 group-hover:text-red-500 text-xl leading-none">&times;</span>
                     </button>
@@ -508,7 +542,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                 <VortexLayout 
                                     sections={sections} 
                                     ctx={ctx} 
-                                    name={currentBuildName}
+                                    name="My Build"
                                     type="Full Character" 
                                     pointsSpent={pointsSpent}
                                     visualSrc={customImage || "/images/Z6tHPxPB-symbol-transparent.png"}
@@ -524,13 +558,11 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                             Reference Library
                                         </h2>
                                     </div>
-                                    
                                     <div className="flex flex-col gap-24">
                                         {(['companions', 'weapons', 'beasts', 'vehicles'] as BuildType[]).map(type => {
                                             const builds = referenceBuilds[type];
                                             const buildKeys = Object.keys(builds);
                                             if (buildKeys.length === 0) return null;
-
                                             return (
                                                 <div key={type} className="w-full">
                                                      <h3 className={`font-cinzel text-2xl mb-8 tracking-widest uppercase opacity-80 ${template === 'terminal' ? 'text-green-600' : template === 'temple' ? 'text-amber-900' : 'text-white'}`}>
@@ -550,19 +582,10 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                                                 attunedSpellMap: new Set(buildData.attunedSpellMap || []),
                                                                 magicalBeastMap: new Set(buildData.magicalBeastMap || []),
                                                             };
-                                                            
                                                             const cost = calculateReferencePoints(type, normalizedData);
-
                                                             return (
                                                                 <div key={key} className="w-full reference-capture-item" data-name={key} data-type={type}>
-                                                                    <ReferenceBuildSummary
-                                                                        type={type}
-                                                                        name={key}
-                                                                        selections={normalizedData}
-                                                                        pointsSpent={cost}
-                                                                        isSunForgerActive={isSunForgerActive}
-                                                                        template={template}
-                                                                    />
+                                                                    <ReferenceBuildSummary type={type} name={key} selections={normalizedData} pointsSpent={cost} isSunForgerActive={isSunForgerActive} template={template} />
                                                                 </div>
                                                             );
                                                         })}
@@ -613,10 +636,9 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                     </div>
                 </main>
 
-                {/* Footer Action Bar - ENHANCED FOR VISIBILITY */}
+                {/* Footer Action Bar */}
                 <footer className="relative z-[150] bg-[#0a0f1e] border-t-2 border-cyan-500/50 flex flex-col shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
                     <div className="p-6 flex flex-col md:flex-row items-center gap-6 justify-between">
-                        {/* Template Switcher */}
                         <div className="relative">
                             <button 
                                 onClick={() => {
@@ -638,46 +660,29 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                     }</span>
                                 </div>
                             </button>
-
                             {showTemplateSelector && (
                                 <div className="absolute bottom-full left-0 mb-3 w-56 bg-black border-2 border-cyan-500 rounded-xl shadow-2xl overflow-hidden animate-fade-in-up z-[200]">
-                                    <button onClick={() => { setTemplate('default'); setShowTemplateSelector(false); }} className={`w-full text-left px-5 py-4 text-xs font-mono font-bold hover:bg-white/10 ${template === 'default' ? 'text-cyan-300 bg-cyan-900/20' : 'text-gray-400'}`}>
-                                        Arcane (Default)
-                                    </button>
-                                    <button onClick={() => { setTemplate('temple'); setShowTemplateSelector(false); }} className={`w-full text-left px-5 py-4 text-xs font-mono font-bold hover:bg-white/10 ${template === 'temple' ? 'text-amber-400 bg-amber-900/20' : 'text-gray-400'}`}>
-                                        Temple (Divine)
-                                    </button>
-                                    <button onClick={() => { setTemplate('vortex'); setShowTemplateSelector(false); }} className={`w-full text-left px-5 py-4 text-xs font-mono font-bold hover:bg-white/10 ${template === 'vortex' ? 'text-purple-400 bg-purple-900/20' : 'text-gray-400'}`}>
-                                        Vortex (Spiral)
-                                    </button>
-                                    <button onClick={() => { setTemplate('terminal'); setShowTemplateSelector(false); }} className={`w-full text-left px-5 py-4 text-xs font-mono font-bold hover:bg-white/10 ${template === 'terminal' ? 'text-green-400 bg-green-900/20' : 'text-gray-400'}`}>
-                                        Terminal (Cyber)
-                                    </button>
+                                    <button onClick={() => { setTemplate('default'); setShowTemplateSelector(false); }} className={`w-full text-left px-5 py-4 text-xs font-mono font-bold hover:bg-white/10 ${template === 'default' ? 'text-cyan-300 bg-cyan-900/20' : 'text-gray-400'}`}>Arcane (Default)</button>
+                                    <button onClick={() => { setTemplate('temple'); setShowTemplateSelector(false); }} className={`w-full text-left px-5 py-4 text-xs font-mono font-bold hover:bg-white/10 ${template === 'temple' ? 'text-amber-400 bg-amber-900/20' : 'text-gray-400'}`}>Temple (Divine)</button>
+                                    <button onClick={() => { setTemplate('vortex'); setShowTemplateSelector(false); }} className={`w-full text-left px-5 py-4 text-xs font-mono font-bold hover:bg-white/10 ${template === 'vortex' ? 'text-purple-400 bg-purple-900/20' : 'text-gray-400'}`}>Vortex (Spiral)</button>
+                                    <button onClick={() => { setTemplate('terminal'); setShowTemplateSelector(false); }} className={`w-full text-left px-5 py-4 text-xs font-mono font-bold hover:bg-white/10 ${template === 'terminal' ? 'text-green-400 bg-green-900/20' : 'text-gray-400'}`}>Terminal (Cyber)</button>
                                 </div>
                             )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-center md:justify-end">
-                            {/* JSON Export */}
-                            <button 
-                                onClick={handleSaveToFile}
-                                className="flex items-center justify-center gap-3 px-6 py-4 font-mono text-sm font-bold bg-slate-800 border-2 border-slate-600 rounded-xl text-slate-100 hover:bg-slate-700 hover:text-white hover:border-slate-300 transition-all active:scale-95 shadow-lg"
-                                title="Download JSON File"
-                            >
-                                <FileExportIcon /> 
-                                <span>{ctx.language === 'ko' ? "JSON 내보내기" : "EXPORT JSON"}</span>
-                            </button>
-
-                            {/* Browser Save */}
-                            <button 
-                                onClick={handleSaveToBrowser}
-                                className="flex items-center justify-center gap-3 px-6 py-4 font-mono text-sm font-bold bg-indigo-900/40 border-2 border-indigo-500 rounded-xl text-indigo-100 hover:bg-indigo-800 hover:text-white hover:border-indigo-300 transition-all active:scale-95 shadow-lg"
-                            >
-                                <SaveDiskIcon /> 
-                                <span>{ctx.language === 'ko' ? "브라우저 저장" : "BROWSER SAVE"}</span>
+                            <button onClick={handleSaveToFile} className="flex items-center justify-center gap-3 px-6 py-4 font-mono text-sm font-bold bg-slate-800 border-2 border-slate-600 rounded-xl text-slate-100 hover:bg-slate-700 hover:text-white hover:border-slate-300 transition-all active:scale-95 shadow-lg" title="Download JSON File">
+                                <FileExportIcon /> <span>{ctx.language === 'ko' ? "JSON 내보내기" : "EXPORT JSON"}</span>
                             </button>
                             
-                            {/* Download Image Menu */}
+                            {/* UPDATED Browser Save Button to open slot interface */}
+                            <button 
+                                onClick={() => { setIsSlotOverlayOpen(true); fetchSlots(); }}
+                                className="flex items-center justify-center gap-3 px-6 py-4 font-mono text-sm font-bold bg-indigo-900/40 border-2 border-indigo-500 rounded-xl text-indigo-100 hover:bg-indigo-800 hover:text-white hover:border-indigo-300 transition-all active:scale-95 shadow-lg"
+                            >
+                                <SaveDiskIcon /> <span>{ctx.language === 'ko' ? "브라우저에 저장" : "BROWSER SAVE"}</span>
+                            </button>
+                            
                             <div className="relative">
                                 <button 
                                     onClick={() => {
@@ -686,30 +691,14 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                     }}
                                     className="flex items-center justify-center gap-3 px-8 py-4 font-mono text-base font-bold bg-cyan-600 border-2 border-cyan-400 rounded-xl text-white hover:bg-cyan-500 hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] transition-all active:scale-95 shadow-xl"
                                 >
-                                    <DownloadIcon /> 
-                                    <span>{ctx.language === 'ko' ? "이미지 다운로드" : "DOWNLOAD IMG"}</span>
+                                    <DownloadIcon /> <span>{ctx.language === 'ko' ? "이미지 다운로드" : "DOWNLOAD IMG"}</span>
                                 </button>
-                                
                                 {showDownloadMenu && (
                                     <div className="absolute bottom-full right-0 mb-3 w-64 bg-black border-2 border-cyan-400 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden animate-fade-in-up z-[200]">
-                                        <div className="p-3 border-b border-white/10 bg-white/5">
-                                            <p className="text-[10px] text-cyan-400 font-mono text-center font-bold tracking-widest uppercase">DOWNLOAD_OPTIONS</p>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleDownload(false)} 
-                                            className="w-full text-left px-5 py-4 hover:bg-cyan-900/40 group transition-colors"
-                                        >
-                                            <span className="block text-sm font-bold text-white font-mono uppercase">Build Only</span>
-                                            <span className="block text-[10px] text-cyan-500/70 group-hover:text-cyan-300">Single PNG file</span>
-                                        </button>
+                                        <div className="p-3 border-b border-white/10 bg-white/5"><p className="text-[10px] text-cyan-400 font-mono text-center font-bold tracking-widest uppercase">DOWNLOAD_OPTIONS</p></div>
+                                        <button onClick={() => handleDownload(false)} className="w-full text-left px-5 py-4 hover:bg-cyan-900/40 group transition-colors"><span className="block text-sm font-bold text-white font-mono uppercase">Build Only</span><span className="block text-[10px] text-cyan-500/70 group-hover:text-cyan-300">Single PNG file</span></button>
                                         <div className="h-px bg-white/10 mx-2"></div>
-                                        <button 
-                                            onClick={() => handleDownload(true)} 
-                                            className="w-full text-left px-5 py-4 hover:bg-purple-900/40 group transition-colors"
-                                        >
-                                            <span className="block text-sm font-bold text-white font-mono uppercase">Build + Reference</span>
-                                            <span className="block text-[10px] text-purple-500/70 group-hover:text-purple-300">Full ZIP archive</span>
-                                        </button>
+                                        <button onClick={() => handleDownload(true)} className="w-full text-left px-5 py-4 hover:bg-purple-900/40 group transition-colors"><span className="block text-sm font-bold text-white font-mono uppercase">Build + Reference</span><span className="block text-[10px] text-purple-500/70 group-hover:text-purple-300">Full ZIP archive</span></button>
                                     </div>
                                 )}
                             </div>
@@ -718,6 +707,64 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 </footer>
             </div>
             
+            {/* Slot-based Save Overlay */}
+            {isSlotOverlayOpen && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-fade-in">
+                    <div className="bg-[#0b0f17] border-2 border-indigo-500/50 rounded-2xl w-full max-w-3xl h-[600px] flex flex-col shadow-[0_0_60px_rgba(99,102,241,0.2)] overflow-hidden">
+                        <header className="p-6 border-b border-white/5 bg-indigo-950/20 flex justify-between items-center">
+                            <div>
+                                <h3 className="font-cinzel text-2xl text-white tracking-widest uppercase">{ctx.language === 'ko' ? "브라우저 슬롯에 저장" : "SAVE TO BROWSER SLOT"}</h3>
+                                <p className="text-[10px] text-indigo-400 font-mono uppercase tracking-widest mt-1">{ctx.language === 'ko' ? "저장할 슬롯을 선택하세요" : "Select a slot to persist your build"}</p>
+                            </div>
+                            <button onClick={() => setIsSlotOverlayOpen(false)} className="text-gray-500 hover:text-white text-3xl">&times;</button>
+                        </header>
+                        
+                        <main className="flex-1 overflow-y-auto p-6 space-y-2 custom-scrollbar">
+                            {Array.from({ length: SLOTS_PER_PAGE }).map((_, idx) => {
+                                const slotId = (currentSlotPage - 1) * SLOTS_PER_PAGE + idx + 1;
+                                const slot = slotsData[slotId];
+                                const isOccupied = !!slot;
+
+                                return (
+                                    <div 
+                                        key={slotId}
+                                        onClick={() => handleSaveToSlot(slotId)}
+                                        className={`group relative p-4 rounded-lg border bg-black/40 hover:bg-indigo-900/10 transition-all cursor-pointer flex items-center gap-4 ${isOccupied ? 'border-amber-500/30 hover:border-amber-500/60' : 'border-white/5 hover:border-white/20'}`}
+                                    >
+                                        <span className="font-mono text-xs font-bold text-gray-600 group-hover:text-indigo-400 w-6 text-center">{slotId.toString().padStart(2, '0')}</span>
+                                        <div className="flex-1 min-w-0">
+                                            {isOccupied ? (
+                                                <>
+                                                    <p className="text-sm font-bold text-amber-100 truncate">{slot.name}</p>
+                                                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">{new Date(slot.timestamp).toLocaleString()}</p>
+                                                </>
+                                            ) : (
+                                                <p className="text-xs text-gray-600 italic group-hover:text-gray-400">{ctx.language === 'en' ? 'Empty Slot' : '빈 슬롯'}</p>
+                                            )}
+                                        </div>
+                                        {isOccupied && (
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteSlot(slotId); }}
+                                                className="p-2 text-gray-600 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors"
+                                                title="Delete"
+                                            >
+                                                <span className="text-lg leading-none">&times;</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </main>
+
+                        <footer className="p-4 border-t border-white/5 bg-black/40 flex justify-between items-center text-xs">
+                            <button onClick={() => setCurrentSlotPage(p => Math.max(1, p - 1))} disabled={currentSlotPage === 1} className="px-4 py-2 text-gray-400 hover:text-indigo-300 disabled:opacity-30 transition-colors">Prev</button>
+                            <span className="font-mono text-gray-500 tracking-[0.2em] uppercase">{currentSlotPage} / {TOTAL_PAGES}</span>
+                            <button onClick={() => setCurrentSlotPage(p => Math.min(TOTAL_PAGES, p + 1))} disabled={currentSlotPage === TOTAL_PAGES} className="px-4 py-2 text-gray-400 hover:text-indigo-300 disabled:opacity-30 transition-colors">Next</button>
+                        </footer>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                  @keyframes spin-slow-reverse {
                     from { transform: rotate(360deg); }
@@ -729,6 +776,10 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 .text-shadow-glow {
                     text-shadow: 0 0 10px rgba(6, 182, 212, 0.5), 0 0 20px rgba(6, 182, 212, 0.3);
                 }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
             `}</style>
         </div>
     );

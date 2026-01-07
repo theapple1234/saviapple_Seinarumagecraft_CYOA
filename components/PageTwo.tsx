@@ -13,7 +13,7 @@ import { UniformSelectionModal } from './UniformSelectionModal';
 import { CompanionSelectionModal } from './SigilTreeOptionCard';
 import { MentorSelectionModal } from './MentorSelectionModal';
 import { SchoolDirectoryModal } from './SchoolDirectoryModal';
-import type { CustomClassmateInstance } from '../types';
+import type { CustomClassmateInstance, Mentor } from '../types';
 
 export const PageTwo: React.FC = () => {
     const {
@@ -209,7 +209,7 @@ export const PageTwo: React.FC = () => {
                     {introStage < 5 && showSkipButton && (
                         <button 
                             onClick={skipIntro} 
-                            className="absolute -top-12 right-0 text-xs uppercase tracking-widest text-gray-500 hover:text-amber-200 transition-colors border border-amber-900/50 rounded px-2 py-1 bg-black/40 z-50 animate-fade-in-up-toast"
+                            className="absolute -top-6 right-0 text-xs uppercase tracking-widest text-gray-500 hover:text-amber-200 transition-colors border border-amber-900/50 rounded px-2 py-1 bg-black/40 z-50 animate-fade-in-up-toast"
                         >
                             Skip Intro »
                         </button>
