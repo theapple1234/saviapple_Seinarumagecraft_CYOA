@@ -25,6 +25,8 @@ interface ChoiceCardProps {
   textScale?: number;
   descriptionSizeClass?: string;
   imageAspectRatio?: string;
+  hideImageBorder?: boolean;
+  imagePaddingTop?: boolean;
 }
 
 // Configuration for Glass Themes
@@ -80,7 +82,8 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
     item, isSelected, onSelect, disabled = false, selectionColor = 'cyan', layout = 'vertical', 
     imageShape = 'rect', aspect, assignedColors = [], noBorder = false, children, 
     alwaysShowChildren = false, onIconButtonClick, iconButton, imageRounding = 'lg', 
-    objectFit, descriptionColor = 'text-gray-400', textScale = 1, descriptionSizeClass, imageAspectRatio 
+    objectFit, descriptionColor = 'text-gray-400', textScale = 1, descriptionSizeClass, imageAspectRatio,
+    hideImageBorder = false, imagePaddingTop = false
 }) => {
   const { id, title, cost, description, imageSrc } = item;
   const { language } = useCharacterContext();
@@ -112,7 +115,7 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
 
       // Helper for Korean parsing
       const parseKorean = () => {
-           const parts = processedStr.split(/((?:Costs|Grants)\s*[+-]?\d+\s*(?:FP|BP)|Free|Costs\s+Varies|Costs\s+varies|varies)/i);
+           const parts = processedStr.split(/((?:Costs|Grants)\s*[+-]?\d+\s*(?:FP|BP)|Free|Costs\s+Varies|Costs\s+varies|varies|소모값\s+변동)/i);
            return parts.map((part, i) => {
                const trimmed = part.trim();
                if (!trimmed) return null;
@@ -124,9 +127,9 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
                const bpMatch = trimmed.match(/(?:Costs|Grants)\s*([+-]?\d+)\s*BP/i);
                if (bpMatch) return <span key={i} className="font-bold text-fuchsia-300 drop-shadow-[0_0_3px_rgba(216,180,254,0.6)]">축복 점수 {bpMatch[1]}</span>;
 
-               if (trimmed.match(/Costs\s+Varies|Costs\s+varies|varies/i)) {
+               if (trimmed.match(/Costs\s+Varies|Costs\s+varies|varies|소모값\s+변동/i)) {
                    if (id === 'magician') return <span key={i} className="font-bold text-fuchsia-300">축복 점수 -???</span>;
-                   return <span key={i} className="text-yellow-400 font-bold">비용 변동</span>;
+                   return <span key={i} className="text-yellow-400 font-bold">소모값 변동</span>;
                }
                if (['and', 'or', ','].includes(trimmed.toLowerCase())) return <span key={i} className="text-gray-500 mx-1">{trimmed === ',' ? ',' : (trimmed === 'and' ? '및' : '또는')}</span>;
                return null;
@@ -208,7 +211,7 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
         {/* Shine */}
         <div className="absolute top-0 -left-[100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 group-hover:animate-shine pointer-events-none"></div>
 
-        <div className={`relative ${imgSize} flex-shrink-0 overflow-hidden ${imageShape === 'circle' ? 'rounded-full border border-white/20' : roundingClass}`}>
+        <div className={`relative ${imgSize} flex-shrink-0 overflow-hidden ${imageShape === 'circle' ? `rounded-full ${hideImageBorder ? '' : 'border border-white/20'}` : roundingClass} ${imagePaddingTop ? 'mt-4' : ''}`}>
              <img src={imageSrc} alt={title} className={`w-full h-full ${objectFit || 'object-cover'} transition-transform duration-500 group-hover:scale-110`} />
              {onIconButtonClick && iconButton && (
                 <button 
@@ -234,7 +237,12 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
 
   // 3. Vertical (Standard Card)
   const fitClass = objectFit ? `object-${objectFit}` : (aspect === 'square' ? 'object-contain' : 'object-cover');
-  const imageHeight = aspect === 'square' ? 'h-full aspect-square' : (imageAspectRatio || 'h-40');
+  const isCircle = imageShape === 'circle';
+
+  // Fix: Handle circle layout specifically to prevent dimension conflicts
+  const imageContainerClass = isCircle 
+    ? `relative w-32 h-32 mx-auto rounded-full overflow-hidden ${hideImageBorder ? '' : 'border-2 border-white/10'} mb-3 flex-shrink-0 bg-black/20 shadow-md ${imagePaddingTop ? 'mt-4' : ''}`
+    : `relative w-full ${aspect === 'square' ? 'h-full aspect-square' : (imageAspectRatio || 'h-40')} overflow-hidden ${roundingClass} mb-3 flex-shrink-0 bg-black/20 ${imagePaddingTop ? 'mt-4' : ''}`;
 
   return (
     <div
@@ -246,7 +254,7 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
       {isSelected && <div className={`absolute inset-0 bg-gradient-to-b ${theme.accentGradient} opacity-30 pointer-events-none`}></div>}
       
       {/* Image Container */}
-      <div className={`relative w-full ${imageHeight} overflow-hidden ${imageShape === 'circle' ? 'rounded-full aspect-square mx-auto w-32 border-2 border-white/10' : roundingClass} mb-3 flex-shrink-0 bg-black/20`}>
+      <div className={imageContainerClass}>
          <div className={`absolute inset-0 transition-opacity duration-300 ${isSelected ? 'bg-transparent' : 'bg-black/10 group-hover:bg-transparent'}`}></div>
          <img 
             src={imageSrc} 
@@ -258,7 +266,8 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
          {onIconButtonClick && iconButton && (
             <button 
               onClick={(e) => { e.stopPropagation(); onIconButtonClick(); }}
-              className={`absolute top-2 right-2 p-2 rounded-full backdrop-blur-md bg-black/50 border border-white/20 text-white hover:${theme.iconBg} hover:border-transparent transition-all z-20 shadow-lg`}
+              className={`absolute p-2 rounded-full backdrop-blur-md bg-black/50 border border-white/20 text-white hover:${theme.iconBg} hover:border-transparent transition-all z-20 shadow-lg`}
+              style={isCircle ? { bottom: '4px', right: '4px' } : { top: '8px', right: '8px' }}
             >
               {iconButton}
             </button>
@@ -276,7 +285,7 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
         {description && aspect !== 'square' && (
              <>
                 <div className={`h-px w-12 mx-auto my-2 transition-all duration-500 ${isSelected ? 'bg-white/30 w-full' : 'bg-white/10 group-hover:w-24'}`}></div>
-                <p className={`${descriptionSizeClass || 'text-[10px]'} leading-relaxed text-gray-400 text-left flex-grow font-sans`}>
+                <p className={`${descriptionSizeClass || 'text-[10px]'} leading-relaxed text-gray-400 ${isCircle ? 'text-center' : 'text-left'} flex-grow font-sans`}>
                     {renderFormattedText(description)}
                 </p>
              </>

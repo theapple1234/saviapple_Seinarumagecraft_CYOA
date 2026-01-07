@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useCharacterContext } from '../context/CharacterContext';
 import {
@@ -173,7 +174,7 @@ export const PageTwo: React.FC = () => {
         return activeMiscActivities.map(item => {
             let newItem = { ...item };
             if (item.id === 'mentor') {
-                newItem.cost = language === 'ko' ? '비용 변동, 획득 변동' : 'Costs varies, Grants varies'; 
+                newItem.cost = language === 'ko' ? '소모값 변동' : 'Costs varies, Grants varies'; 
             }
             return newItem;
         });
@@ -189,7 +190,7 @@ export const PageTwo: React.FC = () => {
         : "Mundane school is notoriously dull. You remember how your old history teacher used to prattle on in monotone for what felt like hours. {c}\"Really, we should have known from the very beginning,\"{/c} you vaguely remember from one of his many lectures. {c}\"Since simulations can be vested within other simulations limitlessly, the cardinality of the set of all simulations exceeds that of the set of all natural numbers. In other words, 'real' universes, even assuming the multiverse is unlimited, are infinitely outnumbered by simulated universes. Therefore, it was always a statistical certainty that the world we are living in isn't 'real', so to speak. In fact, it's just as certain that the universe simulating ours is, itself, simulated...\"{/c} You were so bored, all you could focus on was counting the flecks of grey in his beard.";
     
     const introP2 = language === 'ko' 
-        ? "다행스럽게도 당신은 평범한 사람들이 죽어라 외워야 하는 지식들을 마법적으로 직접 전송받을 수 있었습니다. 그 덕에 열 살쯤 되었을 때 이미 (현실 세계 기준으로) 대학 졸업생에 견줄 만한 지식을 갖추게 되었고요. 이제 당신의 진짜 학업이 시작됩니다. 당신은 국립 명문 마법학교의 학생이 되었으니까요! 이 곳에서 하는 공부에 따라 당신의 진로가 정해지게 되지만, 그렇게 스트레스 받을 필요는 없습니다. 졸업률은 거의 100%이고, 학비는 무료니까, 충분한 능력을 갖출 때까지 마음껏 공부할 수 있어요. 실제로 많은 사람들이 몇십 년 동안 등록되어 있다니까요!"
+        ? "다행스럽게도 당신은 평범한 사람들이 죽어라 외워야 하는 지식들을 마법적으로 직접 전송받을 수 있었습니다. 그 덕에 열 살쯤 되었을 때 이미 (현실 세계 기준으로) 대학 졸업생에 견줄 만한 지식을 갖게 되었고요. 이제 당신의 진짜 학업이 시작됩니다. 당신은 국립 명문 마법학교의 학생이 되었으니까요! 이 곳에서 하는 공부에 따라 당신의 진로가 정해지게 되지만, 그렇게 스트레스 받을 필요는 없습니다. 졸업률은 거의 100%이고, 학비는 무료니까, 충분한 능력을 갖출 때까지 마음껏 공부할 수 있어요. 실제로 많은 사람들이 몇십 년 동안 등록되어 있다니까요!"
         : "Fortunately, most of the things that would ordinarily require blunt memorization were instead magically transmitted directly into your mind. Therefore, by the time you were roughly ten, you already had the knowledge of a college grad (by real world standards). Thus began your real education: your assignment to your Dominion's prestigious school of magecraft! The studying you're doing here will define your future career, but don't get too stressed out. Graduation rates are near 100%, and enrollment is free, allowing you to take as much time as you need to accomplish your goals: many students have been here for decades!";
 
     // Dynamic Speed Config
@@ -437,6 +438,8 @@ export const PageTwo: React.FC = () => {
                                     disabled={isDisabled}
                                     iconButton={isMentor && hasSelectedMentors ? <CompanionIcon /> : undefined}
                                     onIconButtonClick={isMentor && hasSelectedMentors ? () => setIsMentorModalOpen(true) : undefined}
+                                    hideImageBorder={true}
+                                    imagePaddingTop={true}
                                 >
                                     {isMentor && hasSelectedMentors && (
                                         <div className="mt-2 text-center text-xs text-gray-300">
