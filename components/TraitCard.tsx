@@ -115,23 +115,35 @@ export const ChoiceCard = React.memo<ChoiceCardProps>(({
 
       // Helper for Korean parsing
       const parseKorean = () => {
-           const parts = processedStr.split(/((?:Costs|Grants)\s*[+-]?\d+\s*(?:FP|BP)|Free|Costs\s+Varies|Costs\s+varies|varies|소모값\s+변동)/i);
+           // Improved split logic to handle optional "Costs/Grants" prefix for dual costs
+           const parts = processedStr.split(/((?:Costs|Grants)?\s*[+-]?\d+\s*(?:FP|BP)|Free|Costs\s+Varies|Costs\s+varies|varies|소모값\s+변동)/i);
            return parts.map((part, i) => {
                const trimmed = part.trim();
                if (!trimmed) return null;
+               
                if (trimmed.match(/^Free$/i)) return <span key={i} className="text-green-400 font-bold shadow-black drop-shadow-sm">무료</span>;
                
-               const fpMatch = trimmed.match(/(?:Costs|Grants)\s*([+-]?\d+)\s*FP/i);
+               // Match FP with optional prefix
+               const fpMatch = trimmed.match(/(?:Costs|Grants)?\s*([+-]?\d+)\s*FP/i);
                if (fpMatch) return <span key={i} className="text-green-400 font-bold shadow-black drop-shadow-sm">행운 점수 {fpMatch[1]}</span>;
 
-               const bpMatch = trimmed.match(/(?:Costs|Grants)\s*([+-]?\d+)\s*BP/i);
+               // Match BP with optional prefix
+               const bpMatch = trimmed.match(/(?:Costs|Grants)?\s*([+-]?\d+)\s*BP/i);
                if (bpMatch) return <span key={i} className="font-bold text-fuchsia-300 drop-shadow-[0_0_3px_rgba(216,180,254,0.6)]">축복 점수 {bpMatch[1]}</span>;
 
                if (trimmed.match(/Costs\s+Varies|Costs\s+varies|varies|소모값\s+변동/i)) {
                    if (id === 'magician') return <span key={i} className="font-bold text-fuchsia-300">축복 점수 -???</span>;
                    return <span key={i} className="text-yellow-400 font-bold">소모값 변동</span>;
                }
-               if (['and', 'or', ','].includes(trimmed.toLowerCase())) return <span key={i} className="text-gray-500 mx-1">{trimmed === ',' ? ',' : (trimmed === 'and' ? '및' : '또는')}</span>;
+               
+               if (['and', 'or', ','].includes(trimmed.toLowerCase())) {
+                   let sep = '';
+                   if (trimmed === ',') sep = ', ';
+                   else if (trimmed.toLowerCase() === 'and') sep = ', ';
+                   else if (trimmed.toLowerCase() === 'or') sep = ' 또는 ';
+                   return <span key={i} className="text-gray-500 mx-1">{sep}</span>;
+               }
+               
                return null;
            });
       };

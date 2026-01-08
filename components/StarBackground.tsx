@@ -1,7 +1,10 @@
 
 import React, { useMemo } from 'react';
+import { useCharacterContext } from '../context/CharacterContext';
 
 export const StarBackground: React.FC = () => {
+  const { isOptimizationMode } = useCharacterContext();
+
   // Generate random stars for the background
   // Memoized to prevent re-generation on re-renders
   const stars = useMemo(() => {
@@ -21,24 +24,26 @@ export const StarBackground: React.FC = () => {
       {/* Dynamic Gradient Background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#0f172a] via-[#050810] to-black opacity-100"></div>
       
-      {/* Stars Animation */}
-      <div className="stars-container">
-        {stars.map((star) => (
-          <div 
-            key={star.id} 
-            className="star" 
-            style={{
-              left: star.left,
-              top: star.top,
-              width: star.size,
-              height: star.size,
-              '--duration': star.duration,
-              '--delay': star.delay,
-              '--opacity': star.opacity
-            } as React.CSSProperties}
-          />
-        ))}
-      </div>
+      {/* Stars Animation - Disabled in Optimization Mode */}
+      {!isOptimizationMode && (
+        <div className="stars-container">
+          {stars.map((star) => (
+            <div 
+              key={star.id} 
+              className="star" 
+              style={{
+                left: star.left,
+                top: star.top,
+                width: star.size,
+                height: star.size,
+                '--duration': star.duration,
+                '--delay': star.delay,
+                '--opacity': star.opacity
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
+      )}
       
       {/* Overlay to darken slightly for readability when content is on top */}
       <div className="absolute inset-0 bg-black/20"></div>

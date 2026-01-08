@@ -16,6 +16,7 @@ export const usePersistence = (
         setBgmVideoId: (id: string) => void;
         setLanguage: (lang: 'en' | 'ko') => void;
         setFontSize: (size: 'regular' | 'large') => void;
+        setOptimizationMode: (enabled: boolean) => void;
     }
 ) => {
     // Create a serializable state object for full saves
@@ -23,7 +24,7 @@ export const usePersistence = (
         const {
             selectedDominionId, miscFpCosts, kpPaidNodes, selectedLostBlessingNodes, selectedLostPowers,
             backupLostBlessingNodes, backupLostPowers,
-            volume, bgmVideoId, language, fontSize
+            volume, bgmVideoId, language, fontSize, isOptimizationMode
         } = contextState;
 
         // Note: Reference page builds are in localStorage and handled separately by the save logic in SettingsModal
@@ -238,7 +239,8 @@ export const usePersistence = (
                 volume,
                 bgmVideoId,
                 language,
-                fontSize
+                fontSize,
+                isOptimizationMode
             }
         };
         return state;
@@ -277,6 +279,7 @@ export const usePersistence = (
             // We load language to respect user's saved preference
             setters.setLanguage(data.settings.language ?? 'en');
             setters.setFontSize(data.settings.fontSize ?? 'regular');
+            setters.setOptimizationMode(data.settings.isOptimizationMode ?? false);
         }
 
         // Sub-loaders wrapped in try-catch

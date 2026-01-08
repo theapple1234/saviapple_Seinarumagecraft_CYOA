@@ -59,6 +59,11 @@ export interface ICharacterContext extends
 
   isPhotosensitivityDisabled: boolean;
   setPhotosensitivityDisabled: (disabled: boolean) => void;
+  
+  // Optimization
+  isOptimizationMode: boolean;
+  setOptimizationMode: (enabled: boolean) => void;
+
   // Lost Blessing
   selectedLostBlessingNodes: Set<string>;
   toggleLostBlessingNode: (id: string) => void;

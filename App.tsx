@@ -59,6 +59,8 @@ const GlobalNotification: React.FC = () => {
 
 // Background Color Transition Component
 const BackgroundTransition: React.FC<{ currentPage: number }> = ({ currentPage }) => {
+    const { isOptimizationMode } = useCharacterContext();
+
     // Define the gradient overlay for each page
     const getBackgroundClass = (page: number) => {
         switch (page) {
@@ -76,8 +78,10 @@ const BackgroundTransition: React.FC<{ currentPage: number }> = ({ currentPage }
         <div 
             className={`fixed inset-0 z-0 transition-all duration-[1500ms] ease-in-out pointer-events-none ${getBackgroundClass(currentPage)}`}
         >
-             {/* Noise texture overlay for texture consistency */}
-             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
+             {/* Noise texture overlay for texture consistency - Disabled in Optimization Mode */}
+             {!isOptimizationMode && (
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
+             )}
         </div>
     );
 };

@@ -30,9 +30,9 @@ const CogIcon = () => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
 );
-const VolumeIcon = () => (
+const AdjustmentsIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
     </svg>
 );
 const DatabaseIcon = () => (
@@ -66,7 +66,7 @@ interface SaveSlot {
     version: string;
 }
 
-type Tab = 'general' | 'audio' | 'about';
+type Tab = 'general' | 'misc' | 'about';
 
 // --- Reusable UI Components ---
 
@@ -111,6 +111,7 @@ export const SettingsModal: React.FC = () => {
         isSettingsOpen, toggleSettings, 
         language, setLanguage,
         isPhotosensitivityDisabled, setPhotosensitivityDisabled,
+        isOptimizationMode, setOptimizationMode,
         fontSize, setFontSize,
         volume, setVolume,
         bgmVideoId, setBgmVideoId,
@@ -308,7 +309,7 @@ export const SettingsModal: React.FC = () => {
         <div className="w-full md:w-48 flex-shrink-0 bg-black/40 border-b md:border-b-0 md:border-r border-white/5 p-2 md:p-4 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible">
             {[
                 { id: 'general', label: language === 'en' ? 'General' : '일반', icon: <CogIcon/> },
-                { id: 'audio', label: language === 'en' ? 'Audio' : '오디오', icon: <VolumeIcon/> },
+                { id: 'misc', label: language === 'en' ? 'Misc' : '기타', icon: <AdjustmentsIcon/> },
                 { id: 'about', label: language === 'en' ? 'About' : '정보', icon: <InfoIcon/> }
             ].map(tab => (
                 <button
@@ -433,7 +434,7 @@ export const SettingsModal: React.FC = () => {
         </div>
     );
 
-    const renderAudio = () => (
+    const renderMisc = () => (
         <div className="space-y-6 animate-fade-in-up">
             {/* Master Volume */}
             <div className="bg-black/20 p-5 rounded-xl border border-white/5">
@@ -475,6 +476,19 @@ export const SettingsModal: React.FC = () => {
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Optimization Mode */}
+            <div className="bg-black/20 p-3 rounded-lg border border-white/5 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                     <span className="text-gray-300 text-xs font-bold">
+                        {language === 'en' ? 'Optimization Mode' : '최적화 모드'}
+                    </span>
+                    <ToggleSwitch checked={isOptimizationMode} onChange={() => setOptimizationMode(!isOptimizationMode)} />
+                </div>
+                <p className="text-[10px] text-gray-500">
+                    {language === 'en' ? 'Reduces visual effects and animations for better performance.' : '성능 향상을 위해 시각 효과를 줄입니다.'}
+                </p>
             </div>
         </div>
     );
@@ -642,7 +656,7 @@ export const SettingsModal: React.FC = () => {
                         {currentView === 'slots' ? renderSlots() : (
                             <>
                                 {activeTab === 'general' && renderGeneral()}
-                                {activeTab === 'audio' && renderAudio()}
+                                {activeTab === 'misc' && renderMisc()}
                                 {activeTab === 'about' && renderAbout()}
                             </>
                         )}

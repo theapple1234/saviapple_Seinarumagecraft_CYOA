@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useCharacterContext } from '../../context/CharacterContext';
 import { 
@@ -711,8 +710,18 @@ export const GraciousDefeatSection: React.FC = () => {
                                         isSelectionDisabled={isSelectionDisabled}
                                         boostedText={boostedText}
                                         calculateDisplayValue={power.id === 'promised_land' 
-                                            ? (c) => `${15 * Math.pow(ctx.isFeaturesBoosted ? 3 : 2, c)} ${language === 'ko' ? '명' : 'ppl'}`
-                                            : (c) => `${30 * Math.pow(ctx.isFeaturesBoosted ? 3 : 2, c)} ${language === 'ko' ? '헥타르' : 'acres'}`
+                                            ? (c) => {
+                                                if (c === 0) return `0 ${language === 'ko' ? '명' : 'ppl'}`;
+                                                const val = 15 * Math.pow(ctx.isFeaturesBoosted ? 3 : 2, c - 1);
+                                                return `${val} ${language === 'ko' ? '명' : 'ppl'}`;
+                                            }
+                                            : (c) => {
+                                                if (c === 0) return `0 ${language === 'ko' ? '헥타르' : 'acres'}`;
+                                                // Base: 30 acres for EN, 12 hectares for KO
+                                                const base = language === 'ko' ? 12 : 30;
+                                                const val = base * Math.pow(ctx.isFeaturesBoosted ? 3 : 2, c - 1);
+                                                return `${val} ${language === 'ko' ? '헥타르' : 'acres'}`;
+                                            }
                                         }
                                         fontSize={fontSize}
                                     />;

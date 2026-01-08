@@ -32,7 +32,8 @@ export const PageThree: React.FC = () => {
         selectedSpecialSigilChoices, handleSpecialSigilChoice,
         availableSigilCounts,
         fontSize,
-        language
+        language,
+        isOptimizationMode
     } = useCharacterContext();
 
     const [fallingSigils, setFallingSigils] = React.useState<Array<{
@@ -45,6 +46,8 @@ export const PageThree: React.FC = () => {
     }>>([]);
         
     const handleSigilAnimation = (rect: DOMRect, src: string) => {
+        if (isOptimizationMode) return;
+
         const xOffsetEnd = (Math.random() - 0.5) * 200; // -100px to 100px
         const rotation = (Math.random() - 0.5) * 60; // Random rotation between -30 and +30 degrees
 

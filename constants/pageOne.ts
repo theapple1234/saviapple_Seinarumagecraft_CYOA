@@ -130,7 +130,7 @@ export const TRAITS_DATA: { positive: Trait[]; negative: Trait[] } = {
 
 export const TRAITS_DATA_KO: { positive: Trait[]; negative: Trait[] } = {
   positive: [
-    { id: 'blessed', title: '축복받음 (여자만)', cost: 'Costs -5 FP and -5 BP', description: "그녀는 당신과 같은 마녀입니다! 참고 페이지에서 동료 점수 35점을 사용하여 디자인할 수 있습니다.", imageSrc: '/images/8DqmDb6G-trait1.jpg' },
+    { id: 'blessed', title: '축복받음 (여자만)', cost: 'Costs -5 FP, -5 BP', description: "그녀는 당신과 같은 마녀입니다! 참고 페이지에서 동료 점수 35점을 사용하여 디자인할 수 있습니다.", imageSrc: '/images/8DqmDb6G-trait1.jpg' },
     { id: 'badass', title: '싸움을 잘함', cost: 'Costs -3 FP', description: "실전 경험이 있거나 그냥 선천적으로 되게 셉니다. 일진들은 조심해야겠네요!", imageSrc: '/images/Xr7fHNtn-trait2.jpg' },
     { id: 'brilliant', title: '총명함', cost: 'Costs -3 FP', description: "IQ가 천재 수준이고, 당신에게 가르쳐 줄 것이 아주 많습니다! 숙제하다가 막혀도 걱정은 없겠죠.", imageSrc: '/images/zVHYbNP3-trait3.jpg' },
     { id: 'role_model', title: '롤모델', cost: 'Costs -3 FP', description: "근면성실, 이타심, 친절함... 당신이 되고 싶어하는 바로 그런 사람입니다.", imageSrc: '/images/ynWbvQDM-trait4.jpg' },
@@ -185,7 +185,7 @@ export const HOUSE_UPGRADES_DATA: ChoiceItem[] = [
 ];
 
 export const HOUSE_UPGRADES_DATA_KO: ChoiceItem[] = [
-  { id: 'mythical_pet', title: '신비한 애완동물', cost: 'Costs -5 FP and -5 BP', description: "당신의 가족 대대로 전해져 내려오는 애완동물입니다. 참고 페이지에서 동물 점수 30점으로 디자인할 수 있습니다. 하지만 한 번 죽기라도 하면 그걸로 끝이니 조심하세요.", imageSrc: '/images/j94x4Nv3-uph1.png' },
+  { id: 'mythical_pet', title: '신비한 애완동물', cost: 'Costs -5 FP, -5 BP', description: "당신의 가족 대대로 전해져 내려오는 애완동물입니다. 참고 페이지에서 동물 점수 30점으로 디자인할 수 있습니다. 하지만 한 번 죽기라도 하면 그걸로 끝이니 조심하세요.", imageSrc: '/images/j94x4Nv3-uph1.png' },
   { id: 'swimming_pool', title: '수영장', cost: 'Costs -2 FP', description: "당신의 집 크기에 따라 수영장 크기도 정해집니다. 개인 섬의 대저택 정도면 워터파크 수준이죠! 워터 슬라이드나 유수풀장, 온수 욕조 등등을 들여놓을 수도 있습니다.", imageSrc: '/images/LdZDPHCg-uph5.png' },
   { id: 'farmer', title: '농경', cost: 'Costs -0 FP', description: "집에 농장이나 가축 목장이 딸려 있습니다! 훨씬 더 활기찬 생활을 할 수 있다는 건 장점이지만, 대신 좀 더 더럽고, 냄새나고, 농장일을 거들어야 할 겁니다.", imageSrc: '/images/Y4TLvRsG-uph9.png' },
   { id: 'virtual_reality', title: '가상현실 방', cost: 'Costs -5 FP or -2 BP', description: "기술이나 마법으로 구동되는 이 방에서는 웹상에서 다운로드받은 수많은 가상현실을 체험해 볼 수 있습니다. 정말 현실적이에요! 대신 중독되지 않게 주의하시구요...", imageSrc: '/images/KxxmWqRX-uph2.png' },

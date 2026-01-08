@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useCharacterContext } from '../context/CharacterContext';
 import { 
@@ -169,6 +170,18 @@ export const PageOne: React.FC = () => {
     // Dynamic Speed Config
     const typingSpeedP1 = language === 'ko' ? 50 : 15; // Extremely fast in English
     const typingSpeedRest = language === 'ko' ? 30 : 5; // Near instant in English
+
+    const getBlessedModalTitle = () => {
+        if (!selectedFamilyMemberId) return "";
+        const [type, indexStr] = selectedFamilyMemberId.split('-');
+        const index = parseInt(indexStr) + 1;
+        
+        if (language === 'ko') {
+            const memberType = type === 'parent' ? '부모님' : '형제';
+            return `${memberType} ${index}의 축복받은 동료 할당`;
+        }
+        return `Assign a Blessed Companion for ${type.charAt(0).toUpperCase() + type.slice(1)} ${index}`;
+    };
 
     return (
         <>
@@ -884,7 +897,7 @@ export const PageOne: React.FC = () => {
                     setIsBlessedModalOpen(false);
                 }}
                 pointLimit={35}
-                title={`Assign a Blessed Companion for ${selectedFamilyMemberId.split('-')[0].charAt(0).toUpperCase() + selectedFamilyMemberId.split('-')[0].slice(1)} ${parseInt(selectedFamilyMemberId.split('-')[1]) + 1}`}
+                title={getBlessedModalTitle()}
                 categoryFilter="mage"
             />
         )}

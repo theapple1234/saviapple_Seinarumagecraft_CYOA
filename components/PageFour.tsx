@@ -394,7 +394,8 @@ export const PageFour: React.FC = () => {
         fontSize,
         selectedStarCrossedLovePacts,
         handleToggleKp,
-        language
+        language,
+        isOptimizationMode
     } = useCharacterContext();
 
     const activeDrysdeaData = language === 'ko' ? DRYADEA_DATA_KO : DRYADEA_DATA;
@@ -419,6 +420,8 @@ export const PageFour: React.FC = () => {
     } | null>(null);
 
     const handleRuneAnimation = (rect: DOMRect, src: string) => {
+        if (isOptimizationMode) return;
+        
         const xOffsetEnd = (Math.random() - 0.5) * 200;
         const rotation = (Math.random() - 0.5) * 60;
         const newRune = {
