@@ -51,11 +51,14 @@ export const VehicleSelectionModal: React.FC<VehicleSelectionModalProps> = ({
     onClose,
     onSelect,
     pointLimit = 30,
-    title = 'Assign Signature Vehicle',
+    title,
     colorTheme = 'cyan'
 }) => {
     const { language } = useCharacterContext();
     const [vehicleBuilds, setVehicleBuilds] = useState<Record<string, { points: number }>>({});
+
+    // Dynamic title default logic
+    const displayTitle = title || (language === 'ko' ? "당신만의 탈것 할당" : "Assign Signature Vehicle");
 
     useEffect(() => {
         const savedBuildsJSON = localStorage.getItem(STORAGE_KEY);
@@ -150,7 +153,7 @@ export const VehicleSelectionModal: React.FC<VehicleSelectionModalProps> = ({
             >
                 <header className={`flex items-center justify-between p-4 border-b ${currentTheme.headerBorder}`}>
                     <h2 id="vehicle-modal-title" className={`font-cinzel text-2xl ${currentTheme.titleText}`}>
-                        {title}
+                        {displayTitle}
                     </h2>
                     <button
                         onClick={onClose}

@@ -910,7 +910,7 @@ export const PageOne: React.FC = () => {
                     setIsMythicalPetModalOpen(false);
                 }}
                 pointLimit={30}
-                title="Assign Mythical Pet"
+                title={language === 'ko' ? "신비한 애완동물 할당" : "Assign Mythical Pet"}
             />
         )}
         {isInhumanAppearanceModalOpen && (
@@ -922,7 +922,7 @@ export const PageOne: React.FC = () => {
                     setIsInhumanAppearanceModalOpen(false);
                 }}
                 pointLimit={40}
-                title="Assign Inhuman Appearance"
+                title={language === 'ko' ? "인간이 아닌 모습 할당" : "Assign Inhuman Appearance"}
                 excludedPerkIds={['chatterbox_beast', 'magical_beast']}
             />
         )}

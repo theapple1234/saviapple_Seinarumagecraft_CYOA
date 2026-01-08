@@ -41,7 +41,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onStart, isExiting }
 
             {lang === 'en' ? (
                 <>
-                    <h2 className="text-cyan-400/80 font-cinzel text-sm md:text-base tracking-[0.6em] uppercase mb-6 animate-float-slow">Build Your Destiny</h2>
+                    <h2 className="text-cyan-400/80 font-cinzel text-sm md:text-base tracking-[0.6em] uppercase mb-6 animate-float-slow">Choose Your Own Adventure</h2>
                     <h1 className="font-cinzel text-5xl md:text-7xl lg:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-100 to-cyan-900 tracking-[0.1em] drop-shadow-[0_0_35px_rgba(34,211,238,0.4)]">
                         SEINARU<br/>MAGECRAFT GIRLS
                     </h1>
