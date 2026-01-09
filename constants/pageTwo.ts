@@ -6,56 +6,56 @@ export const SCHOOLS_DATA: { [key: string]: School } = {
     id: 'kaliam_tech', 
     title: 'KALIAM TECH', 
     description: "The forefront of magitechnological innovation the world over, almost every modern luxury we take for granted has its roots in Kaliam researchers. Hard-working and ambitious students will fit in well, but lazier sorts may be put off by the often brutal workload. You'll be surrounded by brilliant minds.", 
-    costBlurb: "{j}Juathas Sigils{j} cost two less {bp}Blessing Points{bp} for {i}Blessings administered by {w}Margra{w}{/i}.", 
+    costBlurb: "{j}Juathas Sigils{/j} cost two less {bp}Blessing Points{/bp} for {i}Blessings administered by {w}Margra{/w}{/i}.", 
     imageSrc: '/images/W4bHtB7F-sch1.jpg' 
   },
   shinar: { 
     id: 'sheol_academy', 
     title: 'SHEOL ACADEMY', 
     description: "The oldest school of magecraft, Sheol seems strange and impenetrable to new students, but if you apply yourself enough (or have good connections), you can slowly work your way into its ancient, exclusive sororities and discover there's a {i}lot{/i} more going on here meets the eye. There's long-buried secrets hidden around every corner, if you know where to look.", 
-    costBlurb: "{bp}Sinthru Sigils{bp} cost two less {bp}Blessing Points{bp}.", 
+    costBlurb: "{bp}Sinthru Sigils{/bp} cost two less {bp}Blessing Points{/bp}.", 
     imageSrc: '/images/4wQRPD9B-sch2.jpg' 
   },
   unterseeisch: { 
     id: 'st_lucindas', 
     title: "ST. LUCINDA'S SCHOOL", 
     description: "A small town in itself, St. Lucinda's is probably the most laid-back and fun school out there, with quite relaxed standards and lots of partying. While students here are often stereotyped as lazy, there's actually plenty of opportunities for more ambitious student to learn a lot from the school's wise Sea Saints.", 
-    costBlurb: "{j}Juathas Sigils{j} cost two less {bp}Blessing Points{bp} for {i}Blessings administered by {w}Fidelia{w}{/i}.", 
+    costBlurb: "{j}Juathas Sigils{/j} cost two less {bp}Blessing Points{/bp} for {i}Blessings administered by {w}Fidelia{/w}{/i}.", 
     imageSrc: '/images/FqLwSkw3-sch3.jpg' 
   },
   valsereth: { 
     id: 'strasmara', 
     title: 'STRASMIARA', 
     description: "This Earth's equivalent of the Ivy League. This school boasts some of the smartest and most powerful mages in the world, but its students are stereotyped as snobbish and egotistical. It's the forefront of efforts to research ways to push the Blessings to their absolute limit, and is even the institution that hosts the Irrun Gauntlet. Can be stressful due to its high standards.", 
-    costBlurb: "{r}Xuth Sigils{r} cost three less {bp}Blessing Points{bp}.", 
+    costBlurb: "{r}Xuth Sigils{/r} cost three less {bp}Blessing Points{/bp}.", 
     imageSrc: '/images/tpKN3jCW-sch4.png' 
   },
   gohwood: { 
     id: 'eglaesaria', 
     title: 'THE EGLAESARIA', 
     description: "Formed by a group of powerful dragons many millennia ago; only one of these dragons still lives, serving as the academy's massive, imposing headmaster. It prizes a more simple, combat-centered approach to magic, and many of the greatest warriors in history were taught here. Honor is paramount.", 
-    costBlurb: "{j}Juathas Sigils{j} cost two less {bp}Blessing Points{bp} for {i}Blessings administered by {w}Arabella{w}{/i}.", 
+    costBlurb: "{j}Juathas Sigils{/j} cost two less {bp}Blessing Points{/bp} for {i}Blessings administered by {w}Arabella{/w}{/i}.", 
     imageSrc: '/images/TB1z4y1d-sch5.jpg' 
   },
   palisade: { 
     id: 'triumph_towers', 
     title: 'TRIUMPH TOWERS', 
     description: "Tied for the tallest towers in New Palisade, so much so that they use portals instead of elevators. This is a private school known as the spot for rich kids, and life here is the pinnacle of opulence and luxury, although it can sometimes feel unnervingly corporate. Social influence is treasured here, so it's a good choice for those who want to establish some celebrity status.", 
-    costBlurb: "{y}Lekolu Sigils{y} cost two less {bp}Blessing Points{bp}.", 
+    costBlurb: "{y}Lekolu Sigils{/y} cost two less {bp}Blessing Points{/bp}.", 
     imageSrc: '/images/Y4CG2h57-sch6.jpg' 
   },
   rovines: { 
     id: 'droudnore', 
     title: 'DROUDNORE INSTITUTE', 
     description: "Known for its smokestacks, the Doudnore Institute is perhaps the most modest school, situated on its own spacious private island. Criticized by some for having a less exciting atmosphere than other schools, but it's a perfect choice for more serious students who want to learn very practical magic, and don't want to fret about with theoretical magic like at the Strasmiara.", 
-    costBlurb: "{j}Juathas Sigils{j} cost one less {bp}Blessing Point{bp}.", 
+    costBlurb: "{j}Juathas Sigils{/j} cost one less {bp}Blessing Point{/bp}.", 
     imageSrc: '/images/0RLvt7Td-sch7.jpg' 
   },
   jipangu: { 
     id: 'horikoshi_koko', 
     title: 'HORIKOSHI KOKO', 
     description: "Placed atop Mount Ishikawa, just above the clouds, a variety of charms and hexes make it impossible for all mundanes to ever access. Students tend to get there via portals built in their various shrines. It is steeped in ancient traditions, and constantly alive with fun festivals, parades, ceremonies, and other activities.", 
-    costBlurb: "{i}Sigils{/i} cost one less {bp}Blessing Point{bp} for {i}Blessings administered by {w}Drysdea{w}{/i}.", 
+    costBlurb: "{i}Sigils{/i} cost one less {bp}Blessing Point{/bp} for {i}Blessings administered by {w}Drysdea{/w}{/i}.", 
     imageSrc: '/images/FkLW44SM-sch8.jpg' 
   },
 };
