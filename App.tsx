@@ -10,6 +10,7 @@ import { SecretTransition } from './components/SecretTransition';
 import { SigilCounter } from './components/SigilCounter';
 import { SettingsModal } from './components/SettingsModal';
 import { StarBackground } from './components/StarBackground';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy load page components
 const PageOne = React.lazy(() => import('./components/PageOne').then(module => ({ default: module.PageOne })));
@@ -276,9 +277,11 @@ const AppContent: React.FC = () => {
       return (
           <>
               {/* Separate suspense for the main page content to keep it mounted while modals load */}
-              <Suspense fallback={<div className="fixed inset-0 bg-[#000000] z-[100]"></div>}>
-                  <LostBlessingPage enableEntranceAnimation={showSecretIntro} />
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<div className="fixed inset-0 bg-[#000000] z-[100]"></div>}>
+                    <LostBlessingPage enableEntranceAnimation={showSecretIntro} />
+                </Suspense>
+              </ErrorBoundary>
 
               {/* Separate suspense for modals with a transparent fallback to avoid flashing black */}
               <Suspense fallback={<div className="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none"><div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div></div>}>
@@ -334,16 +337,18 @@ const AppContent: React.FC = () => {
             </header>
           )}
 
-          <Suspense fallback={<LoadingScreen />}>
-            {currentPage === 1 && <PageOne />}
-            {currentPage === 2 && <PageTwo />}
-            {currentPage === 3 && <PageThree />}
-            {currentPage === 4 && <PageFour />}
-            {currentPage === 5 && <PageFive />}
-            {currentPage === 6 && <PageSix />}
-            
-            <PageNavigation />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingScreen />}>
+                {currentPage === 1 && <PageOne />}
+                {currentPage === 2 && <PageTwo />}
+                {currentPage === 3 && <PageThree />}
+                {currentPage === 4 && <PageFour />}
+                {currentPage === 5 && <PageFive />}
+                {currentPage === 6 && <PageSix />}
+                
+                <PageNavigation />
+            </Suspense>
+          </ErrorBoundary>
           
         </div>
         <StatsFooter />

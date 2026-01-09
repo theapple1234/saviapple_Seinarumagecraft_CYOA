@@ -254,7 +254,7 @@ export const CompellingWillSection: React.FC = () => {
     
     // Calculate Lekolu FP cost for Magician Trait
     const lekoluSigils = ['thermosword']; 
-    const selectedLekoluCount = Array.from(ctx.selectedCompellingWillSigils).filter(id => lekoluSigils.includes(id)).length;
+    const selectedLekoluCount = Array.from(ctx.selectedCompellingWillSigils).filter((id: string) => lekoluSigils.includes(id)).length;
     const additionalFpCost = Math.floor(selectedLekoluCount * 6 * 0.25);
 
     const costText = language === 'ko'

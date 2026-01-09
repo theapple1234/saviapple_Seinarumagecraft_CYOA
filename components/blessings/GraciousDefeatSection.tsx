@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useCharacterContext } from '../../context/CharacterContext';
 import { 
@@ -320,7 +321,7 @@ export const GraciousDefeatSection: React.FC = () => {
     
     // Calculate Lekolu FP cost for Magician Trait
     const lekoluSigils = ['realmkeeper', 'realmmaster']; 
-    const selectedLekoluCount = Array.from(ctx.selectedGraciousDefeatSigils).filter(id => lekoluSigils.includes(id)).length;
+    const selectedLekoluCount = Array.from(ctx.selectedGraciousDefeatSigils).filter((id: string) => lekoluSigils.includes(id)).length;
     const additionalFpCost = Math.floor(selectedLekoluCount * 6 * 0.25);
 
     const costText = language === 'ko'
