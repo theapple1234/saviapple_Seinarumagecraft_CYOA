@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useRef } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useRef, useMemo } from 'react';
 import { DOMINIONS } from '../constants';
 import { usePageOneState } from '../hooks/usePageOneState';
 import { usePageTwoState } from '../hooks/usePageTwoState';
@@ -52,6 +52,13 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     const [isSimplifiedUiMode, setSimplifiedUiMode] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     
+    // Sandbox Mode
+    const [isSandboxMode, setIsSandboxMode] = useState(false);
+    const enableSandboxMode = useCallback(() => {
+        setIsSandboxMode(true);
+        setGlobalNotification({ message: "SANDBOX MODE ACTIVATED", type: 'success' });
+    }, []);
+
     // Initialize language based on browser preference
     const [language, setLanguage] = useState<'en' | 'ko'>(() => {
         if (typeof navigator !== 'undefined' && navigator.language) {
@@ -106,6 +113,19 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
         selectedMiscActivityIds: pageTwoState.selectedMiscActivityIds
     });
     const pageSixState = usePageSixState();
+
+    // Calculate Total Runes (including Sandbox bonus)
+    const totalRunes = useMemo(() => {
+        const map = new Map(pageFourState.acquiredRunes);
+        if (isSandboxMode) {
+             map.set('ruhai', (map.get('ruhai') || 0) + 99);
+             map.set('mialgrath', (map.get('mialgrath') || 0) + 99);
+        }
+        return map;
+    }, [pageFourState.acquiredRunes, isSandboxMode]);
+    
+    // Override mialgrathRunesPurchased to use totalRunes so validation passes in Sandbox
+    const mialgrathRunesPurchased = totalRunes.get('mialgrath') ?? 0;
 
     // Centralized Rename Logic
     const updateReferenceName = useCallback((type: BuildType, oldName: string, newName: string) => {
@@ -338,7 +358,8 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     const { totalSigilCounts, availableSigilCounts } = useSigilCalculation(
         pageThreeState, 
         kpPaidNodes, 
-        selectedLostBlessingNodes
+        selectedLostBlessingNodes,
+        isSandboxMode // Updated: pass isSandboxMode
     );
 
     useEffect(() => {
@@ -351,7 +372,7 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     } = useCostCalculation({
         selectedDominionId,
         pageOneState, pageTwoState, pageThreeState, pageFourState, pageFiveState, pageSixState,
-        kpPaidNodes, miscFpCosts, selectedLostBlessingNodes, buildsRefreshTrigger
+        kpPaidNodes, miscFpCosts, selectedLostBlessingNodes, buildsRefreshTrigger, isSandboxMode
     });
 
     const handleSelectDominion = (id: string) => setSelectedDominionId(id);
@@ -411,7 +432,7 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     const contextPartial = {
         selectedDominionId, miscFpCosts, kpPaidNodes, selectedLostBlessingNodes, selectedLostPowers,
         backupLostBlessingNodes, backupLostPowers, // Include backups in partial for persistence
-        volume, bgmVideoId, language, fontSize, isOptimizationMode, isSimplifiedUiMode,
+        volume, bgmVideoId, language, fontSize, isOptimizationMode, isSimplifiedUiMode, isSandboxMode,
         addDebugLog, 
         ...pageOneState, ...pageTwoState, ...pageThreeState, ...pageFourState, ...pageFiveState, ...pageSixState
     };
@@ -420,7 +441,7 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
         setSelectedDominionId, setMiscFpCosts, setKpPaidNodes, setSelectedLostBlessingNodes, setSelectedLostPowers,
         setBackupLostBlessingNodes, setBackupLostPowers, // Include setters for backups
         setVolume, setBgmVideoId, setLanguage, setFontSize,
-        setOptimizationMode, setSimplifiedUiMode
+        setOptimizationMode, setSimplifiedUiMode, setIsSandboxMode
     };
 
     const { serializeState, loadState } = usePersistence(contextPartial as any, setters);
@@ -474,6 +495,8 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
       setOptimizationMode,
       isSimplifiedUiMode,
       setSimplifiedUiMode,
+      isSandboxMode,
+      enableSandboxMode,
       selectedLostBlessingNodes,
       toggleLostBlessingNode,
       selectedLostPowers,
@@ -507,7 +530,11 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
       ...pageThreeState,
       availableSigilCounts, 
       totalSigilCounts,
+      // Provide totalRunes to context
+      totalRunes,
+      // Override with derived value
       ...pageFourState,
+      mialgrathRunesPurchased,
       ...pageFiveState,
       ...pageSixState,
     };

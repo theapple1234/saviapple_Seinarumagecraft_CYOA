@@ -6,7 +6,8 @@ import type { PageThreeState } from './CharacterContextTypes';
 export const useSigilCalculation = (
     pageThreeState: PageThreeState,
     kpPaidNodes: Map<string, string>,
-    selectedLostBlessingNodes: Set<string>
+    selectedLostBlessingNodes: Set<string>,
+    isSandboxMode: boolean
 ) => {
     // --- SIGIL CALCULATION ---
     const totalSigilCounts = useMemo(() => {
@@ -31,8 +32,18 @@ export const useSigilCalculation = (
             lekoluTotal += count;
         }
         totals.lekolu = lekoluTotal;
+
+        if (isSandboxMode) {
+            totals.kaarn += 99;
+            totals.purth += 99;
+            totals.juathas += 99;
+            totals.xuth += 99;
+            totals.sinthru += 99;
+            totals.lekolu += 99;
+        }
+
         return totals;
-    }, [pageThreeState.acquiredCommonSigils, pageThreeState.selectedSpecialSigilChoices, pageThreeState.acquiredLekoluJobs, pageThreeState.selectedStarCrossedLovePacts, pageThreeState.jadeEmperorExtraXuthPurchased]);
+    }, [pageThreeState.acquiredCommonSigils, pageThreeState.selectedSpecialSigilChoices, pageThreeState.acquiredLekoluJobs, pageThreeState.selectedStarCrossedLovePacts, pageThreeState.jadeEmperorExtraXuthPurchased, isSandboxMode]);
 
     const { usedSigilCounts: rawUsedSigilCounts } = pageThreeState;
 

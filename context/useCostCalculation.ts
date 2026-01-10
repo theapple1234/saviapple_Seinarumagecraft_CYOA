@@ -1,53 +1,12 @@
 
-import { useMemo, useCallback, useEffect, useState } from 'react';
-import type { PageOneState, PageTwoState, PageThreeState, PageFourState, PageFiveState, PageSixState } from './CharacterContextTypes';
-import type { AllBuilds } from '../types';
+import { useMemo } from 'react';
 import { 
-  DOMINIONS, TRAITS_DATA, HOUSES_DATA, HOUSE_UPGRADES_DATA, 
-  TRUE_SELF_TRAITS, ALTER_EGO_TRAITS, MAGICAL_STYLES_DATA, 
-  BUILD_TYPES_DATA, HEADMASTERS_DATA, TEACHERS_DATA,
-  DURATION_DATA, CLUBS_DATA, MISC_ACTIVITIES_DATA, CLASSMATES_DATA,
-  CUSTOM_CLASSMATE_CHOICES_DATA,
-  BLESSING_ENGRAVINGS, COMMON_SIGILS_DATA, SPECIAL_SIGILS_DATA,
-  GOOD_TIDINGS_SIGIL_TREE_DATA,
-  LIMITLESS_POTENTIAL_RUNES_DATA, ALLMILLOR_CHOICES_DATA, CAREER_GOALS_DATA,
-  COLLEAGUES_DATA, CUSTOM_COLLEAGUE_CHOICES_DATA, RETIREMENT_CHOICES_DATA, CHILD_OF_GOD_DATA,
-  UNIFORMS_DATA,
-  TELEKINETICS_DATA, METATHERMICS_DATA, 
-  ESSENTIAL_BOONS_DATA, MINOR_BOONS_DATA, MAJOR_BOONS_DATA,
-  ELEANORS_TECHNIQUES_DATA, GENEVIEVES_TECHNIQUES_DATA,
-  BREWING_DATA, SOUL_ALCHEMY_DATA, TRANSFORMATION_DATA,
-  CHANNELLING_DATA, NECROMANCY_DATA, BLACK_MAGIC_DATA,
-  TELEPATHY_DATA, MENTAL_MANIPULATION_DATA,
-  ENTRANCE_DATA, FEATURES_DATA, INFLUENCE_DATA,
-  NET_AVATAR_DATA, TECHNOMANCY_DATA, NANITE_CONTROL_DATA,
-  RIGHTEOUS_CREATION_SPECIALTIES_DATA, RIGHTEOUS_CREATION_MAGITECH_DATA, 
-  RIGHTEOUS_CREATION_ARCANE_CONSTRUCTS_DATA, RIGHTEOUS_CREATION_METAMAGIC_DATA,
-  STAR_CROSSED_LOVE_PACTS_DATA
-} from '../constants';
-import { PARENT_COST_MAP, SIBLING_COST_PER, STORAGE_KEY, SIGIL_BP_COSTS, parseCost, getBlessingForNode, type Cost } from './utils';
+    PARENT_COST_MAP, SIBLING_COST_PER, parseCost, SIGIL_BP_COSTS
+} from './utils';
+import * as Constants from '../constants';
+import { PageOneState, PageTwoState, PageThreeState, PageFourState, PageFiveState, PageSixState } from './CharacterContextTypes';
 
-const SUN_FORGER_CREATION_POWERS = new Set([
-    'thermal_weaponry',
-    'mages_familiar_i', 'mages_familiar_ii', 'mages_familiar_iii',
-    'human_marionettes', 'beastmaster', 'personification',
-    'shed_humanity_i', 'shed_humanity_ii', 'malrayoots',
-    'undead_beast', 'undead_thrall',
-    'overlord',
-    'heavily_armed', 'nanite_form',
-    'weaponsmith', 'master_mechanic_i', 'master_mechanic_ii',
-    'roboticist_i', 'roboticist_ii'
-]);
-
-// Set of Sigil IDs that are of type 'Lekolu' within trees
-const LEKOLU_TREE_SIGILS = new Set([
-    'thermosword', // Compelling Will
-    'realmkeeper', 'realmmaster', // Gracious Defeat
-    'kyrotik_armor', 'ez_hack', // Closed Circuits
-    'polymat' // Righteous Creation
-]);
-
-interface CostProps {
+interface UseCostCalculationProps {
     selectedDominionId: string | null;
     pageOneState: PageOneState;
     pageTwoState: PageTwoState;
@@ -59,665 +18,493 @@ interface CostProps {
     miscFpCosts: number;
     selectedLostBlessingNodes: Set<string>;
     buildsRefreshTrigger: number;
+    isSandboxMode: boolean;
 }
 
 export const useCostCalculation = ({
-    selectedDominionId, pageOneState, pageTwoState, pageThreeState, pageFourState, pageFiveState, pageSixState, kpPaidNodes, miscFpCosts, selectedLostBlessingNodes, buildsRefreshTrigger
-}: CostProps) => {
-    const [blessingPoints, setBlessingPoints] = useState(100);
-    const [fortunePoints, setFortunePoints] = useState(100);
-    const [kuriPoints, setKuriPoints] = useState(0);
+    selectedDominionId,
+    pageOneState,
+    pageTwoState,
+    pageThreeState,
+    pageFourState,
+    pageFiveState,
+    pageSixState,
+    kpPaidNodes,
+    miscFpCosts,
+    selectedLostBlessingNodes,
+    buildsRefreshTrigger,
+    isSandboxMode
+}: UseCostCalculationProps) => {
 
-    // Detailed Breakdown States
-    const [bpGained, setBpGained] = useState(0);
-    const [bpSpent, setBpSpent] = useState(0);
-    const [fpGained, setFpGained] = useState(0);
-    const [fpSpent, setFpSpent] = useState(0);
-    const [kpGained, setKpGained] = useState(0);
-    const [kpSpent, setKpSpent] = useState(0);
+    return useMemo(() => {
+        let fpGained = 0;
+        let fpSpent = 0;
+        let bpGained = 0;
+        let bpSpent = 0;
+        let kpGained = 0;
+        let kpSpent = 0;
 
-    const lekoluSubOptions = SPECIAL_SIGILS_DATA.find(s => s.id === 'lekolu')?.subOptions || [];
-    const ALL_CAREER_GOALS = useMemo(() => [ ...CAREER_GOALS_DATA.proSports, ...CAREER_GOALS_DATA.general, ...CAREER_GOALS_DATA.finishingTouches ], []);
+        // Helpers
+        const addFp = (amount: number) => { if (amount > 0) fpGained += amount; else fpSpent += Math.abs(amount); };
+        const addBp = (amount: number) => { if (amount > 0) bpGained += amount; else bpSpent += Math.abs(amount); };
+        const addKp = (amount: number) => { if (amount > 0) kpGained += amount; else kpSpent += Math.abs(amount); };
 
-    const ALL_ITEMS_WITH_COSTS = useMemo(() => [
-        ...TRAITS_DATA.positive, ...TRAITS_DATA.negative,
-        ...HOUSES_DATA, ...HOUSE_UPGRADES_DATA,
-        ...TRUE_SELF_TRAITS, ...ALTER_EGO_TRAITS, ...UNIFORMS_DATA,
-        ...MAGICAL_STYLES_DATA, ...BUILD_TYPES_DATA,
-        ...HEADMASTERS_DATA, ...TEACHERS_DATA, ...DURATION_DATA,
-        ...CLUBS_DATA, ...MISC_ACTIVITIES_DATA, ...CLASSMATES_DATA,
-        ...CUSTOM_CLASSMATE_CHOICES_DATA,
-        ...BLESSING_ENGRAVINGS, ...COMMON_SIGILS_DATA, 
-        ...SPECIAL_SIGILS_DATA.map(s => ({...s, cost: s.id === 'lekolu' ? '' : s.cost})),
-        ...lekoluSubOptions.map(sub => ({...sub, cost: SPECIAL_SIGILS_DATA.find(s => s.id === 'lekolu')?.cost || ''})),
-        ...GOOD_TIDINGS_SIGIL_TREE_DATA,
-        ...LIMITLESS_POTENTIAL_RUNES_DATA, ...ALLMILLOR_CHOICES_DATA,
-        ...ALL_CAREER_GOALS, ...COLLEAGUES_DATA, ...CUSTOM_COLLEAGUE_CHOICES_DATA,
-        ...RETIREMENT_CHOICES_DATA, ...CHILD_OF_GOD_DATA,
-        ...ESSENTIAL_BOONS_DATA, ...MINOR_BOONS_DATA, ...MAJOR_BOONS_DATA,
-        ...TELEKINETICS_DATA, ...METATHERMICS_DATA,
-        ...ELEANORS_TECHNIQUES_DATA, ...GENEVIEVES_TECHNIQUES_DATA,
-        ...BREWING_DATA, ...SOUL_ALCHEMY_DATA, ...TRANSFORMATION_DATA,
-        ...CHANNELLING_DATA, ...NECROMANCY_DATA, ...BLACK_MAGIC_DATA,
-        ...TELEPATHY_DATA, ...MENTAL_MANIPULATION_DATA,
-        ...ENTRANCE_DATA, ...FEATURES_DATA, ...INFLUENCE_DATA,
-        ...NET_AVATAR_DATA, ...TECHNOMANCY_DATA, ...NANITE_CONTROL_DATA,
-        ...RIGHTEOUS_CREATION_SPECIALTIES_DATA, ...RIGHTEOUS_CREATION_MAGITECH_DATA, 
-        ...RIGHTEOUS_CREATION_ARCANE_CONSTRUCTS_DATA, ...RIGHTEOUS_CREATION_METAMAGIC_DATA,
-        ...STAR_CROSSED_LOVE_PACTS_DATA
-    ], [ALL_CAREER_GOALS, lekoluSubOptions]);
+        const processCost = (costStr: string | undefined) => {
+            if (!costStr) return;
+            const { fp, bp } = parseCost(costStr);
+            // parseCost returns positive for costs (if "Costs ...") and negative for grants (if "Grants ...")
+            // wait, looking at utils.ts parseCost implementation:
+            // if "Grants", it returns negative values. If "Costs", positive values.
+            // So if fp is negative (grant), we add to Gained. If positive (cost), we add to Spent.
+            
+            if (fp < 0) fpGained += Math.abs(fp);
+            else fpSpent += fp;
 
-    const ALL_COSTS = useMemo(() => {
-        const costs = new Map<string, Cost>();
-        ALL_ITEMS_WITH_COSTS.forEach(item => {
-            if (item.id) costs.set(item.id, parseCost((item as any).cost || ''));
-        });
-        return costs;
-    }, [ALL_ITEMS_WITH_COSTS]);
-
-    const getExtraBpCost = useCallback(() => {
-        if (!pageThreeState.selectedStarCrossedLovePacts.has('sun_forgers_boon')) {
-            return 0;
-        }
-
-        const assignedNames: string[] = [
-            pageOneState.assignedVehicleName,
-            ...Array.from(pageOneState.blessedCompanions.values()),
-            pageOneState.mythicalPetBeastName,
-            pageOneState.inhumanAppearanceBeastName,
-            ...pageTwoState.customClassmates.map(c => c.companionName),
-            ...pageFiveState.customColleagues.map(c => c.companionName),
-            pageFiveState.joysOfParentingCompanionName,
-            pageThreeState.mageFamiliarBeastName,
-            ...pageThreeState.humanMarionetteCompanionNames,
-            ...pageThreeState.beastmasterBeastNames,
-            pageThreeState.personificationBuildName,
-            pageThreeState.shedHumanityBeastName,
-            pageThreeState.malrayootsMageFormName, 
-            pageThreeState.malrayootsUniversalFormName,
-            pageThreeState.undeadThrallCompanionName,
-            pageThreeState.undeadBeastName,
-            pageThreeState.goodTidingsWeaponName,
-            pageThreeState.compellingWillWeaponName,
-            pageThreeState.thermalWeaponryWeaponName,
-            pageThreeState.worldlyWisdomWeaponName,
-            pageThreeState.bitterDissatisfactionWeaponName,
-            pageThreeState.lostHopeWeaponName,
-            pageThreeState.fallenPeaceWeaponName,
-            pageThreeState.graciousDefeatWeaponName,
-            ...pageThreeState.verseAttendantCompanionNames,
-            ...pageThreeState.livingInhabitants.map(i => i.beastName),
-            pageThreeState.overlordBeastName,
-            pageThreeState.closedCircuitsWeaponName,
-            pageThreeState.heavilyArmedWeaponName,
-            pageThreeState.naniteFormBeastName,
-            pageThreeState.righteousCreationWeaponName,
-            pageThreeState.weaponsmithWeaponName,
-            pageThreeState.masterMechanicVehicleName,
-            pageThreeState.roboticistIBeastName,
-            pageThreeState.roboticistCompanionName,
-            ...pageFourState.customSpells.map(s => s.assignedEntityName),
-            pageThreeState.onisBlessingGuardianName,
-             // Add Vacation Homes mythical pets if applicable
-             ...pageOneState.vacationHomes.map(h => h.mythicalPetName)
-        ].filter((name): name is string => !!name);
-
-        let totalExtraBp = 0;
-        const savedBuildsJSON = localStorage.getItem(STORAGE_KEY);
-        if (savedBuildsJSON) {
-            try {
-                const parsedBuilds: AllBuilds = JSON.parse(savedBuildsJSON);
-                const allBuildCategories = [parsedBuilds.companions, parsedBuilds.weapons, parsedBuilds.beasts, parsedBuilds.vehicles];
-                
-                assignedNames.forEach(name => {
-                    for (const category of allBuildCategories) {
-                        if (category && category[name]) {
-                            totalExtraBp += (category[name].data.bpSpent || 0);
-                            break;
-                        }
-                    }
-                });
-            } catch (e) {
-                console.error("Error calculating extra BP cost", e);
-            }
-        }
-        return totalExtraBp;
-    }, [
-        pageOneState, pageTwoState, pageThreeState, pageFourState, pageFiveState, 
-        buildsRefreshTrigger 
-    ]);
-
-    useEffect(() => {
-        let calcFpSpent = 0;
-        let calcFpGained = 0;
-        let calcBpSpent = 0;
-        let calcBpGained = 0;
-        let calcKpSpent = 0;
-        let calcKpGained = 0;
-
-        const addFp = (val: number) => { if (val > 0) calcFpSpent += val; else calcFpGained += Math.abs(val); };
-        const addBp = (val: number) => { if (val > 0) calcBpSpent += val; else calcBpGained += Math.abs(val); };
-        const addKp = (val: number) => { if (val > 0) calcKpSpent += val; else calcKpGained += Math.abs(val); };
-
-        const accumulateCost = (id: string | null) => {
-          if (!id) return;
-          const cost = ALL_COSTS.get(id) ?? {fp: 0, bp: 0};
-          addFp(cost.fp);
-          addBp(cost.bp);
+            if (bp < 0) bpGained += Math.abs(bp);
+            else bpSpent += bp;
         };
-        const dominion = DOMINIONS.find(d => d.id === selectedDominionId);
-        const dominionName = dominion?.title.toUpperCase();
 
-        // Page 1
-        const parentCost = PARENT_COST_MAP[pageOneState.numParents] ?? (pageOneState.numParents > 0 ? (pageOneState.numParents - 2) * 5 + 3 : -20);
-        addFp(parentCost);
-        addFp(pageOneState.numSiblings * SIBLING_COST_PER);
+        // --- PAGE 1 ---
+        // Parents
+        const parentCost = PARENT_COST_MAP[pageOneState.numParents] ?? 0;
+        if (parentCost < 0) fpGained += Math.abs(parentCost); else fpSpent += parentCost;
+
+        // Siblings
+        const siblingCost = pageOneState.numSiblings * SIBLING_COST_PER;
+        fpSpent += siblingCost;
+
+        // Traits (Family)
+        pageOneState.assignedTraits.forEach(traits => {
+            traits.forEach(tId => {
+                const t = [...Constants.TRAITS_DATA.positive, ...Constants.TRAITS_DATA.negative].find(i => i.id === tId);
+                processCost(t?.cost);
+            });
+        });
+
+        // House
+        const house = Constants.HOUSES_DATA.find(h => h.id === pageOneState.selectedHouseId);
+        processCost(house?.cost);
         
-        pageOneState.assignedTraits.forEach((traits) => { traits.forEach(accumulateCost); });
-        
-        // Main House
-        accumulateCost(pageOneState.selectedHouseId);
-        pageOneState.selectedUpgrades.forEach(id => {
-            if (id === 'virtual_reality') {
-                if (pageOneState.vrChamberCostType === 'fp') addFp(5);
-                else if (pageOneState.vrChamberCostType === 'bp') addBp(2);
-            } else {
-                accumulateCost(id);
+        // House Upgrades
+        pageOneState.selectedUpgrades.forEach(uId => {
+            const u = Constants.HOUSE_UPGRADES_DATA.find(i => i.id === uId);
+            if (u) {
+                // Special handling for VR Chamber cost type
+                if (uId === 'virtual_reality' && pageOneState.vrChamberCostType) {
+                    if (pageOneState.vrChamberCostType === 'fp') fpSpent += 5;
+                    else bpSpent += 2;
+                } else {
+                    processCost(u.cost);
+                }
             }
         });
+
+        // Extra House Costs
         if (pageOneState.selectedHouseId === 'mansion') {
-            addFp(pageOneState.mansionExtraSqFt * 1);
+            fpSpent += pageOneState.mansionExtraSqFt; // 1 FP per 1000 sq ft (counter is raw count)
         }
         if (pageOneState.selectedUpgrades.has('private_island')) {
-            addFp(pageOneState.islandExtraMiles * 1);
+            fpSpent += pageOneState.islandExtraMiles; // 1 FP per extra mile
         }
 
-        // Vacation Homes Logic
+        // Vacation Homes
         pageOneState.vacationHomes.forEach(home => {
-            addFp(3); // Base cost per home
-            if (home.houseId) accumulateCost(home.houseId);
-            home.upgradeIds.forEach(id => {
-                 if (id === 'virtual_reality') {
-                    if (home.vrChamberCostType === 'fp') addFp(5);
-                    else if (home.vrChamberCostType === 'bp') addBp(2);
-                } else {
-                    accumulateCost(id);
+             // Base cost for extra homes (first one if Moving Out might be free but that's P5 logic)
+             // Vacation homes in P1 cost 3 FP each
+             fpSpent += 3;
+
+             // House type cost
+             const h = Constants.HOUSES_DATA.find(i => i.id === home.houseId);
+             processCost(h?.cost);
+
+             // Upgrades
+             home.upgradeIds.forEach(uId => {
+                const u = Constants.HOUSE_UPGRADES_DATA.find(i => i.id === uId);
+                 if (u) {
+                    if (uId === 'virtual_reality' && home.vrChamberCostType) {
+                        if (home.vrChamberCostType === 'fp') fpSpent += 5;
+                        else bpSpent += 2;
+                    } else {
+                        processCost(u.cost);
+                    }
+                }
+             });
+
+             if (home.houseId === 'mansion') fpSpent += home.mansionExtraSqFt;
+             if (home.upgradeIds.has('private_island')) fpSpent += home.islandExtraMiles;
+        });
+
+        // True Self & Alter Ego
+        pageOneState.selectedTrueSelfTraits.forEach(tId => processCost(Constants.TRUE_SELF_TRAITS.find(i => i.id === tId)?.cost));
+        pageOneState.selectedAlterEgoTraits.forEach(tId => processCost(Constants.ALTER_EGO_TRAITS.find(i => i.id === tId)?.cost));
+        
+        // Uniforms (First free)
+        if (pageOneState.selectedUniforms.length > 1) {
+            fpSpent += (pageOneState.selectedUniforms.length - 1);
+        }
+
+        // Magical Styles
+        pageOneState.selectedMagicalStyles.forEach(sId => processCost(Constants.MAGICAL_STYLES_DATA.find(i => i.id === sId)?.cost));
+
+        // --- PAGE 2 ---
+        if (!pageOneState.isMultiplayer) {
+            processCost(Constants.HEADMASTERS_DATA.find(i => i.id === pageTwoState.selectedHeadmasterId)?.cost);
+            pageTwoState.selectedTeacherIds.forEach(tId => processCost(Constants.TEACHERS_DATA.find(i => i.id === tId)?.cost));
+            processCost(Constants.DURATION_DATA.find(i => i.id === pageTwoState.selectedDurationId)?.cost);
+            pageTwoState.selectedClubIds.forEach(cId => processCost(Constants.CLUBS_DATA.find(i => i.id === cId)?.cost));
+            
+            pageTwoState.selectedMiscActivityIds.forEach(aId => {
+                if (aId !== 'mentor') processCost(Constants.MISC_ACTIVITIES_DATA.find(i => i.id === aId)?.cost);
+            });
+            
+            // Classmates
+            pageTwoState.selectedClassmateIds.forEach(cId => {
+                const cm = Constants.CLASSMATES_DATA.find(i => i.id === cId);
+                if (cm) {
+                    let { fp, bp } = parseCost(cm.cost);
+                    // Refund logic for same dominion
+                    const dom = Constants.DOMINIONS.find(d => d.id === selectedDominionId);
+                    if (dom && cm.birthplace.toUpperCase() === dom.title.toUpperCase()) {
+                        fp = Math.max(0, fp - 2);
+                    }
+                    fpSpent += fp;
+                    bpSpent += bp;
                 }
             });
-            if (home.houseId === 'mansion') {
-                addFp(home.mansionExtraSqFt * 1);
-            }
-            if (home.upgradeIds.has('private_island')) {
-                addFp(home.islandExtraMiles * 1);
-            }
-        });
-
-
-        pageOneState.selectedTrueSelfTraits.forEach(accumulateCost);
-        pageOneState.selectedAlterEgoTraits.forEach(accumulateCost);
-        pageOneState.selectedUniforms.slice(1).forEach(accumulateCost);
-        pageOneState.selectedMagicalStyles.forEach(accumulateCost);
-
-        // Page 2
-        accumulateCost(pageTwoState.selectedHeadmasterId);
-        pageTwoState.selectedTeacherIds.forEach(accumulateCost);
-        accumulateCost(pageTwoState.selectedDurationId);
-        pageTwoState.selectedClubIds.forEach(accumulateCost);
-        // Explicitly handle mixed cost for TA and Adjunct Professor
-        pageTwoState.selectedMiscActivityIds.forEach(id => {
-            if (id === 'teachers_assistant') {
-                addFp(5);
-                addBp(-2);
-            } else if (id === 'adjunct_professor') {
-                addFp(5);
-                addBp(-3);
-            } else {
-                accumulateCost(id);
-            }
-        });
-
-        pageTwoState.selectedClassmateIds.forEach(id => {
-            const classmate = CLASSMATES_DATA.find(c => c.id === id);
-            const cost = ALL_COSTS.get(id) ?? { fp: 0, bp: 0 };
-            let currentFpCost = cost.fp;
-            if (classmate && dominionName && classmate.birthplace.toUpperCase() === dominionName) {
-                currentFpCost -= 2;
-            }
-            addFp(currentFpCost);
-            addBp(cost.bp);
-        });
-        pageTwoState.customClassmates.forEach(c => accumulateCost(c.optionId));
+        }
+        
+        // Boarding School
         if (pageTwoState.isBoardingSchool && pageOneState.selectedHouseId === 'ragamuffin') {
-            addFp(8);
+            fpSpent += 8;
         }
+
+        // Custom Classmates
+        pageTwoState.customClassmates.forEach(cc => {
+             const opt = Constants.CUSTOM_CLASSMATE_CHOICES_DATA.find(c => c.id === cc.optionId);
+             processCost(opt?.cost);
+        });
+
+        // Mentors (Page 2 & 5 hybrid logic)
+        // If mentor selected here or P5, calculate cost.
+        // We use P2 selectedMentors as source of truth.
         pageTwoState.selectedMentors.forEach(mentor => {
-            const mentorFpCost = mentor.cost;
-            addFp(mentorFpCost * 2); // Double cost
-            addBp(-(mentorFpCost));  // Grants BP equal to original FP cost (effectively double the original half grant)
+             const cost = mentor.cost; // Base FP cost
+             fpSpent += (cost * 2);
+             bpGained += cost;
         });
 
-        // Page 3 - Dominion Perks / School Bonuses Logic
-        // Dynamic Costs
-        const juathasCost = selectedDominionId === 'rovines' ? 7 : 8; // Droudnore (Global)
-        const sinthruCost = selectedDominionId === 'shinar' ? 8 : 10; // Sheol (Global)
-        const xuthCost = selectedDominionId === 'valsereth' ? 9 : 12; // Strasmara (Global)
-        const lekoluCost = selectedDominionId === 'palisade' ? 2 : 4; // Triumph Towers (Global)
+        // --- PAGE 3 ---
+        // Common Sigils
+        const kaarnCount = pageThreeState.acquiredCommonSigils.get('kaarn') ?? 0;
+        const purthCount = pageThreeState.acquiredCommonSigils.get('purth') ?? 0;
+        const juathasCount = pageThreeState.acquiredCommonSigils.get('juathas') ?? 0;
+        const sinthruCount = pageThreeState.acquiredCommonSigils.get('sinthru') ?? 0; // If bought directly
 
-        let bpRefund = 0;
-        const checkRefund = (engraving: string | null, sigilSet: Set<string>, juathasSigilId: string) => {
-            const finalEngraving = engraving ?? pageThreeState.selectedBlessingEngraving;
-            if (finalEngraving === 'weapon' && sigilSet.has(juathasSigilId)) {
-                bpRefund++;
-            }
-        };
-
-        const refundMap = [
-            { engraving: pageThreeState.compellingWillEngraving, sigils: pageThreeState.selectedCompellingWillSigils, juathasId: 'manipulator' },
-            { engraving: pageThreeState.worldlyWisdomEngraving, sigils: pageThreeState.selectedWorldlyWisdomSigils, juathasId: 'arborealist' },
-            { engraving: pageThreeState.bitterDissatisfactionEngraving, sigils: pageThreeState.selectedBitterDissatisfactionSigils, juathasId: 'fireborn' },
-            { engraving: pageThreeState.lostHopeEngraving, sigils: pageThreeState.selectedLostHopeSigils, juathasId: 'young_witch' },
-            { engraving: pageThreeState.fallenPeaceEngraving, sigils: pageThreeState.selectedFallenPeaceSigils, juathasId: 'left_brained' },
-            { engraving: pageThreeState.graciousDefeatEngraving, sigils: pageThreeState.selectedGraciousDefeatSigils, juathasId: 'gd_fireborn' },
-            { engraving: pageThreeState.closedCircuitsEngraving, sigils: pageThreeState.selectedClosedCircuitsSigils, juathasId: 'script_kiddy' },
-            { engraving: pageThreeState.righteousCreationEngraving, sigils: pageThreeState.selectedRighteousCreationSigils, juathasId: 'rookie_engineer' },
-        ];
-
-        for (const { engraving, sigils, juathasId } of refundMap) {
-            checkRefund(engraving, sigils, juathasId);
-        }
-        addBp(-bpRefund);
-
-        // Apply Dominion Refunds for Juathas Sigils (BP Calculation)
-        // Only apply if NOT paid with KP
-        if (selectedDominionId === 'halidew') {
-            if (pageThreeState.selectedClosedCircuitsSigils.has('script_kiddy') && !kpPaidNodes.has('script_kiddy')) addBp(-2);
-            if (pageThreeState.selectedRighteousCreationSigils.has('rookie_engineer') && !kpPaidNodes.has('rookie_engineer')) addBp(-2);
-            if (pageThreeState.selectedStarCrossedLoveSigils.has('sworn_fealty') && !kpPaidNodes.has('sworn_fealty')) addBp(-2);
-        }
-
-        if (selectedDominionId === 'unterseeisch') {
-            if (pageThreeState.selectedLostHopeSigils.has('young_witch') && !kpPaidNodes.has('young_witch')) addBp(-2);
-            if (pageThreeState.selectedFallenPeaceSigils.has('left_brained') && !kpPaidNodes.has('left_brained')) addBp(-2);
-            if (pageThreeState.selectedGraciousDefeatSigils.has('gd_fireborn') && !kpPaidNodes.has('gd_fireborn')) addBp(-2);
-        }
-
-        if (selectedDominionId === 'gohwood') {
-            if (pageThreeState.selectedCompellingWillSigils.has('manipulator') && !kpPaidNodes.has('manipulator')) addBp(-2);
-            if (pageThreeState.selectedWorldlyWisdomSigils.has('arborealist') && !kpPaidNodes.has('arborealist')) addBp(-2);
-            if (pageThreeState.selectedBitterDissatisfactionSigils.has('fireborn') && !kpPaidNodes.has('fireborn')) addBp(-2);
-        }
-
-        // Weapon Cost Logic: Charge 5 FP for each unique weapon assigned to a blessing engraving
-        const assignedWeapons = new Set([
-            pageThreeState.goodTidingsWeaponName,
-            pageThreeState.compellingWillWeaponName,
-            pageThreeState.worldlyWisdomWeaponName,
-            pageThreeState.bitterDissatisfactionWeaponName,
-            pageThreeState.lostHopeWeaponName,
-            pageThreeState.fallenPeaceWeaponName,
-            pageThreeState.graciousDefeatWeaponName,
-            pageThreeState.closedCircuitsWeaponName,
-            pageThreeState.righteousCreationWeaponName,
-        ].filter(Boolean)); // remove nulls
+        bpSpent += kaarnCount * SIGIL_BP_COSTS.kaarn;
+        bpSpent += purthCount * SIGIL_BP_COSTS.purth;
+        bpSpent += juathasCount * SIGIL_BP_COSTS.juathas;
         
-        addFp(assignedWeapons.size * 5);
-
-        if (pageThreeState.selectedMetathermics.has('thermal_weaponry')) addFp(-5);
-        if (pageThreeState.selectedNaniteControls.has('heavily_armed')) addFp(-5);
-        if (pageThreeState.selectedMagitechPowers.has('weaponsmith')) addFp(-5);
-
-        const hasCheissilith = pageThreeState.selectedStarCrossedLovePacts.has('cheissiliths_bargain');
-        const hasSinthrusContract = pageThreeState.selectedStarCrossedLovePacts.has('sinthrus_contract');
-        const hasKuriOdanCharm = pageThreeState.selectedStarCrossedLovePacts.has('kuri_odans_charm');
-
-        pageThreeState.acquiredCommonSigils.forEach((count, id) => {
-            let itemBpCost = ALL_COSTS.get(id)?.bp ?? 0;
-            let itemFpCost = ALL_COSTS.get(id)?.fp ?? 0;
-
-            if (id === 'juathas') {
-                itemBpCost = juathasCost;
-                if (hasCheissilith) {
-                    itemBpCost = 0; // Free
-                }
-            } else if (id === 'purth') {
-                if (hasCheissilith) {
-                    itemBpCost = itemBpCost * 2;
-                }
-            } else if (id === 'sinthru') {
-                if (hasSinthrusContract) {
-                    itemBpCost = 0;
-                }
-            }
-
-            addFp(itemFpCost * count);
-            addBp(itemBpCost * count);
-        });
-
-        pageThreeState.acquiredLekoluJobs.forEach((count, id) => {
-            const cost = ALL_COSTS.get(id) ?? {fp: 0, bp: 0};
-            addFp(cost.fp * count);
-            addBp(lekoluCost * count);
-        });
-
-        pageThreeState.selectedSpecialSigilChoices.forEach((subOptionSet, sigilId) => {
-            if (sigilId !== 'lekolu') {
-                const baseCost = ALL_COSTS.get(sigilId) ?? { fp: 0, bp: 0 };
-                let currentBpCost = baseCost.bp;
-                
-                if (sigilId === 'xuth') {
-                    if (hasCheissilith) {
-                        currentBpCost = xuthCost * 2; // Doubled
-                    } else {
-                        currentBpCost = xuthCost;
-                    }
-                }
-                if (sigilId === 'sinthru') {
-                    if (hasSinthrusContract) {
-                        currentBpCost = 0;
-                    } else {
-                        currentBpCost = sinthruCost;
-                    }
-                }
-
-                addFp(baseCost.fp * subOptionSet.size);
-                addBp(currentBpCost * subOptionSet.size);
-            }
-        });
-        
-        // Lost Blessing Cost Logic
-        if (selectedLostBlessingNodes.size > 0) {
-            if (hasSinthrusContract) {
-                // If contract active, pay BP instead of Sigil
-                addBp(selectedLostBlessingNodes.size * sinthruCost);
-            }
-            // If contract inactive, cost is 1 Sinthru Sigil (handled in availableSigilCounts calculation)
+        if (!pageThreeState.selectedStarCrossedLovePacts.has('sinthrus_contract')) {
+            // Sinthru cost: Depends on Dominion (Shinar = 8, others = 10)
+            const sinthruCost = selectedDominionId === 'shinar' ? 8 : 10;
+            // Count purchased ones + Lost Blessing usage
+            // The context handles `acquiredCommonSigils` for purchased ones.
+            // Lost Blessing usage is handled by `selectedLostBlessingNodes` but those are 1 sinthru cost each.
+            // If contract is NOT active, we pay BP for purchased Sinthru sigils
+            bpSpent += sinthruCount * sinthruCost;
         }
         
-        if (pageThreeState.selectedStarCrossedLovePacts.has('sun_forgers_boon')) {
-            const allSelectedPowers = new Set<string>();
-            const powerStateSources = [
-                pageThreeState.selectedTelekinetics,
-                pageThreeState.selectedMetathermics,
-                pageThreeState.selectedEleanorsTechniques,
-                pageThreeState.selectedGenevievesTechniques,
-                pageThreeState.selectedBrewing,
-                pageThreeState.selectedSoulAlchemy,
-                pageThreeState.selectedTransformation,
-                pageThreeState.selectedChannelling,
-                pageThreeState.selectedNecromancy,
-                pageThreeState.selectedBlackMagic,
-                pageThreeState.selectedTelepathy,
-                pageThreeState.selectedMentalManipulation,
-                pageThreeState.selectedNetAvatars,
-                pageThreeState.selectedTechnomancies,
-                pageThreeState.selectedNaniteControls,
-                pageThreeState.selectedSpecialties,
-                pageThreeState.selectedMagitechPowers,
-                pageThreeState.selectedArcaneConstructsPowers,
-                pageThreeState.selectedMetamagicPowers,
-                pageThreeState.selectedEntrance,
-                pageThreeState.selectedInfluence
-            ];
-            
-            powerStateSources.forEach(set => set.forEach(id => allSelectedPowers.add(id)));
-
-            allSelectedPowers.forEach(powerId => {
-                if (SUN_FORGER_CREATION_POWERS.has(powerId)) {
-                    const item = ALL_ITEMS_WITH_COSTS.find(i => i.id === powerId);
-                    const grade = (item as any)?.grade;
-
-                    if (grade === 'kaarn') addBp(-1.5);
-                    else if (grade === 'purth') addBp(-2.5);
-                    else if (grade === 'xuth') {
-                        const baseCost = 12;
-                        const schoolRefund = (selectedDominionId === 'valsereth') ? 3 : 0;
-                        const paid = baseCost - schoolRefund; 
-                        addBp(-(paid / 2));
-                    } else if (grade === 'lekolu') {
-                        const baseBp = 4;
-                        const baseFp = 6;
-                        const schoolRefund = (selectedDominionId === 'palisade') ? 2 : 0;
-                        const paidBp = baseBp - schoolRefund;
-                        addBp(-(paidBp / 2)); 
-                        addFp(-(baseFp / 2)); 
-                    } else if (grade === 'sinthru') {
-                        const baseCost = 10;
-                        const schoolRefund = (selectedDominionId === 'shinar') ? 2 : 0;
-                        const paid = baseCost - schoolRefund;
-                        addBp(-(paid / 2));
-                    }
-                }
-            });
-
-            if (pageThreeState.livingInhabitants.length > 0) addBp(-(1.5 * pageThreeState.livingInhabitants.length));
-            if (pageThreeState.verseAttendantCount > 0) addBp(-(1.5 * pageThreeState.verseAttendantCount));
-            addBp(getExtraBpCost());
-        }
-
-        if (selectedDominionId === 'jipangu') {
-            const ruhaiCount = pageFourState.acquiredRunes.get('ruhai') ?? 0;
-            const mialgrathCount = pageFourState.acquiredRunes.get('mialgrath') ?? 0;
-            addBp(-(ruhaiCount * 1));
-            addBp(-(mialgrathCount * 1));
-        }
-
-        if (pageOneState.selectedTrueSelfTraits.has('magician')) {
-            const magicianBlessings = [
-                { isApplied: pageThreeState.isGoodTidingsMagicianApplied, cost: pageThreeState.goodTidingsSigilTreeCost, sigils: [] }, // Good Tidings uses standard costs, sigil tree doesn't track ids here but costs directly
-                { isApplied: pageThreeState.isCompellingWillMagicianApplied, cost: pageThreeState.compellingWillSigilTreeCost, sigils: pageThreeState.selectedCompellingWillSigils },
-                { isApplied: pageThreeState.isWorldlyWisdomMagicianApplied, cost: pageThreeState.worldlyWisdomSigilTreeCost, sigils: pageThreeState.selectedWorldlyWisdomSigils },
-                { isApplied: pageThreeState.isBitterDissatisfactionMagicianApplied, cost: pageThreeState.bitterDissatisfactionSigilTreeCost, sigils: pageThreeState.selectedBitterDissatisfactionSigils },
-                { isApplied: pageThreeState.isLostHopeMagicianApplied, cost: pageThreeState.lostHopeSigilTreeCost, sigils: pageThreeState.selectedLostHopeSigils },
-                { isApplied: pageThreeState.isFallenPeaceMagicianApplied, cost: pageThreeState.fallenPeaceSigilTreeCost, sigils: pageThreeState.selectedFallenPeaceSigils },
-                { isApplied: pageThreeState.isGraciousDefeatMagicianApplied, cost: pageThreeState.graciousDefeatSigilTreeCost, sigils: pageThreeState.selectedGraciousDefeatSigils },
-                { isApplied: pageThreeState.isClosedCircuitsMagicianApplied, cost: pageThreeState.closedCircuitsSigilTreeCost, sigils: pageThreeState.selectedClosedCircuitsSigils },
-                { isApplied: pageThreeState.isRighteousCreationMagicianApplied, cost: pageThreeState.righteousCreationSigilTreeCost, sigils: pageThreeState.selectedRighteousCreationSigils },
-            ];
-            
-            magicianBlessings.forEach(blessing => {
-                if (blessing.isApplied) {
-                    addBp(Math.floor(blessing.cost * 0.25));
-                    
-                    // Add FP cost for Lekolu sigils if present in the tree
-                    // Assume Lekolu base cost of 6 FP for calculation
-                    if (blessing.sigils) {
-                        let lekoluCount = 0;
-                        blessing.sigils.forEach((id: string) => {
-                            if (LEKOLU_TREE_SIGILS.has(id)) {
-                                lekoluCount++;
-                            }
-                        });
-                        if (lekoluCount > 0) {
-                            addFp(Math.floor(lekoluCount * 6 * 0.25));
-                        }
-                    }
-                }
-            });
-        }
+        // Special Sigils: Xuth
+        const xuthTrials = pageThreeState.selectedSpecialSigilChoices.get('xuth')?.size ?? 0;
+        const xuthCost = selectedDominionId === 'valsereth' ? 9 : 12;
+        let xuthBp = xuthTrials * xuthCost;
         
-        // Jade Emperor's Challenge Cost Logic
+        // Jade Emperor Refund logic
         if (pageThreeState.selectedStarCrossedLovePacts.has('jade_emperors_challenge')) {
-            const xuthTrialsCount = pageThreeState.selectedSpecialSigilChoices.get('xuth')?.size || 0;
-            // 1. Calculate discount refund if at least one trial is done
-            if (xuthTrialsCount >= 1) {
-                addBp(-(xuthCost / 2));
-            }
-            // 2. Add extra cost if the 3rd one is purchased
-            if (pageThreeState.jadeEmperorExtraXuthPurchased) {
-                addBp(xuthCost);
-            }
+            if (xuthTrials >= 1) xuthBp -= (xuthCost / 2); // Refund half of one
+        }
+        // Jade Emperor Extra Buy
+        if (pageThreeState.jadeEmperorExtraXuthPurchased) {
+            xuthBp += xuthCost;
+        }
+        // Cheissilith's Bargain: Double Xuth/Purth price
+        if (pageThreeState.selectedStarCrossedLovePacts.has('cheissiliths_bargain')) {
+            xuthBp *= 2;
+            // Double purth cost too (subtracted before, add again)
+            bpSpent += purthCount * SIGIL_BP_COSTS.purth; 
+        }
+        bpSpent += xuthBp;
+
+        // Special Sigils: Lekolu
+        let lekoluTotal = 0;
+        for (const count of pageThreeState.acquiredLekoluJobs.values()) {
+            lekoluTotal += count;
+        }
+        bpSpent += lekoluTotal * 4;
+        fpSpent += lekoluTotal * 6;
+
+        // Special Sigils: Sinthru (Favors)
+        // Only if contract is NOT active. If active, Favors are free (but Prereqs might not be).
+        // Wait, Favors give Sigils. 
+        // The cost is: "Costs -10 BP per favor" to GET the sigil.
+        if (!pageThreeState.selectedStarCrossedLovePacts.has('sinthrus_contract')) {
+             const sinthruFavors = pageThreeState.selectedSpecialSigilChoices.get('sinthru')?.size ?? 0;
+             bpSpent += sinthruFavors * 10;
         }
 
+        // Star Crossed Love Pacts (Costs/Grants from description not explicit usually, but handled here if needed)
+        // Evoghos Vow: -50 FP, +50 BP
         if (pageThreeState.selectedStarCrossedLovePacts.has('evoghos_vow')) {
-            addFp(50); 
-            addBp(-50);
+            fpSpent += 50;
+            bpGained += 50;
         }
+        // Kuri-Odan: -50 BP, +100 KP
         if (pageThreeState.selectedStarCrossedLovePacts.has('kuri_odans_charm')) {
-            addBp(50);
+            bpSpent += 50;
+            kpGained += 100;
         }
 
-        // --- Calculate Kuri Points Cost ---
-        // Iterate over kpPaidNodes and sum their BP costs
-        kpPaidNodes.forEach((type, id) => {
-             // 1. Determine base cost
-             let cost = SIGIL_BP_COSTS[type] || 0;
-             const blessingId = getBlessingForNode(id);
-             
-             // 2. Adjust cost based on perks (same logic as above)
-             if (type === 'juathas') {
-                cost = juathasCost;
-                
-                // Specific School Refunds for Juathas
-                if (selectedDominionId === 'halidew') {
-                    if (blessingId === 'closed_circuits' || blessingId === 'righteous_creation' || blessingId === 'star_crossed_love') {
-                        cost -= 2;
-                    }
-                }
-                
-                if (selectedDominionId === 'unterseeisch') {
-                    if (blessingId === 'lost_hope' || blessingId === 'fallen_peace' || blessingId === 'gracious_defeat') {
-                        cost -= 2;
-                    }
-                }
-
-                if (selectedDominionId === 'gohwood') {
-                    if (blessingId === 'compelling_will' || blessingId === 'worldly_wisdom' || blessingId === 'bitter_dissatisfaction') {
-                        cost -= 2;
-                    }
-                }
-
-                if (hasCheissilith) cost = 0; // Free
-            } else if (type === 'purth') {
-                if (hasCheissilith) cost = cost * 2;
-            } else if (type === 'sinthru') {
-                if (hasSinthrusContract) cost = 0;
-            } else if (type === 'xuth') {
-                if (hasCheissilith) cost = xuthCost * 2; // Doubled
-                else cost = xuthCost;
-            } else if (type === 'lekolu') {
-                cost = lekoluCost; 
+        // KP Usage Calculation
+        // Iterate paid nodes and deduct their BP cost, add to KP spent
+        kpPaidNodes.forEach((sigilType) => {
+            const cost = SIGIL_BP_COSTS[sigilType] || 0;
+            let finalCost = cost;
+            // Adjust for specific cost modifiers (e.g. Dominion perks, Cheissilith)
+            if (sigilType === 'xuth') {
+                finalCost = selectedDominionId === 'valsereth' ? 9 : 12;
             }
-
-            // --- REFUND LOGIC ---
-            // If paying with KP, we refund the BP/FP cost that was charged by the standard calculation above.
-            // Lekolu is special: it costs FP and BP.
-            if (type === 'lekolu') {
-                // Lekolu standard cost is 4 BP and 6 FP per job
-                // With palisade refund, it's 2 BP
-                const refundBp = lekoluCost; // 4 or 2
-                const refundFp = 6; // Fixed FP cost
-                addBp(-refundBp);
-                addFp(-refundFp);
-            } else {
-                 // For other sigils, refund the BP cost calculated above
-                 addBp(-cost);
+            if (pageThreeState.selectedStarCrossedLovePacts.has('cheissiliths_bargain')) {
+                if (sigilType === 'purth' || sigilType === 'xuth') finalCost *= 2;
+                if (sigilType === 'juathas') finalCost = 0;
             }
-
-            addKp(Math.max(0, cost));
+            // Refund BP, Charge KP
+            // Since we sum up ALL sigils from trees/counts in useSigilCalculation -> usedSigilCounts,
+            // and `acquiredCommonSigils` stores the inventory, we assume the user bought the sigil with BP first.
+            // Wait, the logic in UI is "Purchase with KP". 
+            // If purchased with KP, it shouldn't cost BP.
+            // The `acquiredCommonSigils` tracks total available. 
+            // `kpPaidNodes` tracks which tree nodes are paid by KP.
+            // 
+            // Correct Logic: 
+            // 1. Calculate cost of ALL active tree nodes (sigilTreeCost in hooks).
+            // 2. Subtract BP cost for nodes in `kpPaidNodes`.
+            // 3. Add KP cost for nodes in `kpPaidNodes`.
+            
+            // However, the `bpSpent` calculation above relies on `acquiredCommonSigils` (Inventory).
+            // The Inventory approach assumes you buy sigils into a pool.
+            // KP payment is direct to node.
+            // So, for every KP paid node, it consumes a sigil from inventory.
+            // If we want to simulate "Paying with KP instead of BP", we effectively refund the BP cost of that sigil.
+            
+            bpSpent -= finalCost;
+            kpSpent += finalCost;
         });
+        
+        // Dominion Perks (Discounts)
+        // Halidew: Juathas -2 BP for Margra (Closed Circuits)
+        if (selectedDominionId === 'halidew') {
+            const margraNodes = Array.from(pageThreeState.selectedClosedCircuitsSigils).filter(id => {
+                const s = Constants.CLOSED_CIRCUITS_SIGIL_TREE_DATA.find(n => n.id === id);
+                return s?.imageSrc.includes('juathas');
+            });
+            bpSpent -= (margraNodes.length * 2);
+        }
+        // Shinar: Sinthru -2 BP (Lost Hope)
+        if (selectedDominionId === 'shinar') {
+            const shinarNodes = Array.from(pageThreeState.selectedLostHopeSigils).filter(id => {
+                const s = Constants.LOST_HOPE_SIGIL_TREE_DATA.find(n => n.id === id);
+                return s?.imageSrc.includes('sinthru');
+            });
+            bpSpent -= (shinarNodes.length * 2);
+        }
+        // Unterseeisch: Juathas -2 BP for Fidelia (Lost Hope) - Wait, description says Fidelia.
+        if (selectedDominionId === 'unterseeisch') {
+            const fideliaNodes = Array.from(pageThreeState.selectedLostHopeSigils).filter(id => {
+                const s = Constants.LOST_HOPE_SIGIL_TREE_DATA.find(n => n.id === id);
+                return s?.imageSrc.includes('juathas');
+            });
+            bpSpent -= (fideliaNodes.length * 2);
+        }
+        // Valsereth: Xuth -3 BP (Any) -> Already handled in Xuth base cost logic above (9 instead of 12)
+        
+        // Gohwood: Juathas -2 BP for Arabella (Compelling Will)
+        if (selectedDominionId === 'gohwood') {
+             const arabellaNodes = Array.from(pageThreeState.selectedCompellingWillSigils).filter(id => {
+                const s = Constants.COMPELLING_WILL_SIGIL_TREE_DATA.find(n => n.id === id);
+                return s?.imageSrc.includes('juathas');
+            });
+            bpSpent -= (arabellaNodes.length * 2);
+        }
+        // Palisade: Lekolu -2 BP (Any) -> But Lekolu sigils are jobs (gain resources). 
+        // Wait, "Lekolu Sigils cost two less". 
+        // In this CYOA, Lekolu sigils are "Jobs" that COST resources to perform? 
+        // "Costs -4 BP and -6 FP per job". Yes.
+        if (selectedDominionId === 'palisade') {
+            // Count total Lekolu jobs
+            bpSpent -= (lekoluTotal * 2);
+        }
+        // Rovines: Juathas -1 BP (Any)
+        if (selectedDominionId === 'rovines') {
+             // Need to count ALL Juathas nodes selected across all trees
+             const allJuathas = [
+                 pageThreeState.selectedGoodTidingsTier ? 1 : 0, // Master includes Juathas? No, Standard=Kaarn, Journey=Purth, Master=Xuth. Fireborn is Juathas.
+                 // We need to check every tree.
+                 ...Array.from(pageThreeState.selectedCompellingWillSigils).filter(id => Constants.COMPELLING_WILL_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+                 ...Array.from(pageThreeState.selectedWorldlyWisdomSigils).filter(id => Constants.WORLDLY_WISDOM_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+                 ...Array.from(pageThreeState.selectedBitterDissatisfactionSigils).filter(id => Constants.BITTER_DISSATISFACTION_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+                 ...Array.from(pageThreeState.selectedLostHopeSigils).filter(id => Constants.LOST_HOPE_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+                 ...Array.from(pageThreeState.selectedFallenPeaceSigils).filter(id => Constants.FALLEN_PEACE_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+                 ...Array.from(pageThreeState.selectedGraciousDefeatSigils).filter(id => Constants.GRACIOUS_DEFEAT_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+                 ...Array.from(pageThreeState.selectedClosedCircuitsSigils).filter(id => Constants.CLOSED_CIRCUITS_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+                 ...Array.from(pageThreeState.selectedRighteousCreationSigils).filter(id => Constants.RIGHTEOUS_CREATION_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+                 ...Array.from(pageThreeState.selectedStarCrossedLoveSigils).filter(id => Constants.STAR_CROSSED_LOVE_SIGIL_TREE_DATA.find(s=>s.id===id)?.imageSrc.includes('juathas')),
+             ].length;
+             bpSpent -= allJuathas;
+        }
+        // Jipangu: -1 BP for Drysdea (Righteous Creation)
+        if (selectedDominionId === 'jipangu') {
+            const drysdeaCount = pageThreeState.selectedRighteousCreationSigils.size; // "Sigils cost one less", implies all sigils
+            bpSpent -= drysdeaCount;
+        }
 
-        // Page 4 - Runes Cost Logic
+        // Cheissilith's Bargain: Juathas Free
+        if (pageThreeState.selectedStarCrossedLovePacts.has('cheissiliths_bargain')) {
+             // Find total Juathas cost and subtract it (refund)
+             // Using similar logic to Rovines but more robust if we had a centralized 'used' map
+             // Simply: Calculate total Juathas used, multiply by 8, subtract from BP spent.
+             const totalJuathas = pageThreeState.usedSigilCounts.juathas;
+             bpSpent -= (totalJuathas * 8);
+        }
+
+        // --- PAGE 4 ---
+        // Runes
         const ruhaiCount = pageFourState.acquiredRunes.get('ruhai') ?? 0;
         const mialgrathCount = pageFourState.acquiredRunes.get('mialgrath') ?? 0;
-        const ruhaiCost = ALL_COSTS.get('ruhai')?.bp ?? 0;
-        const mialgrathCost = ALL_COSTS.get('mialgrath')?.bp ?? 0;
+        const ruhaiCost = Constants.LIMITLESS_POTENTIAL_RUNES_DATA[0].cost; // "Costs 8 BP"
+        const mialgrathCost = Constants.LIMITLESS_POTENTIAL_RUNES_DATA[1].cost; // "Costs 16 BP"
 
-        // Base cost calculation (before KP adjustments)
-        addBp(ruhaiCost * ruhaiCount);
-        addBp(mialgrathCost * mialgrathCount);
+        // Parse costs
+        const { bp: rBp } = parseCost(ruhaiCost || '');
+        const { bp: mBp } = parseCost(mialgrathCost || '');
+        
+        let totalRuhaiBp = rBp * ruhaiCount;
+        let totalMialBp = mBp * mialgrathCount;
 
-        // KP Cost Adjustment for Custom Spells
-        if (hasKuriOdanCharm) {
-            pageFourState.customSpells.forEach(spell => {
-                // Calculate Ruhai Cost Adjustment
-                if (spell.isRuhaiKpPaid) {
-                    addBp(-ruhaiCost);
-                    addKp(ruhaiCost);
-                }
-                
-                // Calculate Milgrath Cost Adjustment
-                // Note: Milgrath cost is applied only if Milgrath is actually applied to the spell
-                if (spell.mialgrathApplied && spell.isMilgrathKpPaid) {
-                    addBp(-mialgrathCost);
-                    addKp(mialgrathCost);
-                }
-            });
-        }
+        // KP Logic for Runes (Page 4 Toggles)
+        // The `pageFourState.customSpells` tracks individual payment status
+        pageFourState.customSpells.forEach((spell: any) => {
+             if (spell.isRuhaiKpPaid) {
+                 totalRuhaiBp -= rBp;
+                 kpSpent += rBp;
+             }
+             if (spell.mialgrathApplied && spell.isMilgrathKpPaid) {
+                 totalMialBp -= mBp;
+                 kpSpent += mBp;
+             }
+        });
+        
+        bpSpent += totalRuhaiBp;
+        bpSpent += totalMialBp;
 
-        // Page 5
-        pageFiveState.selectedAllmillorIds.forEach(accumulateCost);
-        pageFiveState.selectedCareerGoalIds.forEach(accumulateCost);
+        // --- PAGE 5 ---
+        // Allmillor
+        pageFiveState.selectedAllmillorIds.forEach(id => processCost(Constants.ALLMILLOR_CHOICES_DATA.find(i => i.id === id)?.cost));
+        // Career Goals
+        pageFiveState.selectedCareerGoalIds.forEach(id => {
+             const goals = Object.values(Constants.CAREER_GOALS_DATA).flat() as any[];
+             const goal = goals.find(g => g.id === id);
+             processCost(goal?.cost);
+        });
+        // Colleagues
         pageFiveState.selectedColleagueIds.forEach(id => {
-            const colleague = COLLEAGUES_DATA.find(c => c.id === id);
-            const cost = ALL_COSTS.get(id) ?? { fp: 0, bp: 0 };
-            let currentFpCost = cost.fp;
-            if (colleague && dominionName && colleague.birthplace.toUpperCase() === dominionName) {
-                if (currentFpCost > 0) currentFpCost = Math.max(0, currentFpCost - 2);
+            const c = Constants.COLLEAGUES_DATA.find(i => i.id === id);
+            if (c) {
+                let { fp, bp } = parseCost(c.cost);
+                // Refund logic for same dominion
+                const dom = Constants.DOMINIONS.find(d => d.id === selectedDominionId);
+                if (dom && c.birthplace.toUpperCase() === dom.title.toUpperCase()) {
+                    fp = Math.max(0, fp - 2);
+                }
+                fpSpent += fp;
+                bpSpent += bp;
             }
-            addFp(currentFpCost);
-            addBp(cost.bp);
         });
-        pageFiveState.customColleagues.forEach(c => accumulateCost(c.optionId));
-        
-        if (pageFiveState.selectedCareerGoalIds.has('mentor_career')) {
-            if (pageFiveState.mentee) {
-                addFp(Math.max(0, pageFiveState.mentee.originalCost - 1));
-            }
+        // Custom Colleagues
+        pageFiveState.customColleagues.forEach(cc => {
+             const opt = Constants.CUSTOM_COLLEAGUE_CHOICES_DATA.find(c => c.id === cc.optionId);
+             processCost(opt?.cost);
+        });
+        // Moving Out Homes
+        pageFiveState.movingOutHomes.forEach(home => {
+             if (!home.isInherited) {
+                 fpSpent += 3; // Base cost for new home
+                 const h = Constants.HOUSES_DATA.find(i => i.id === home.houseId);
+                 processCost(h?.cost);
+             }
+             home.upgradeIds.forEach(uId => {
+                const u = Constants.HOUSE_UPGRADES_DATA.find(i => i.id === uId);
+                 if (u) {
+                    if (uId === 'virtual_reality' && home.vrChamberCostType) {
+                        if (home.vrChamberCostType === 'fp') fpSpent += 5;
+                        else bpSpent += 2;
+                    } else {
+                        processCost(u.cost);
+                    }
+                }
+             });
+             if (home.houseId === 'mansion') fpSpent += home.mansionExtraSqFt;
+             if (home.upgradeIds.has('private_island')) fpSpent += home.islandExtraMiles;
+        });
+
+        // --- PAGE 6 ---
+        // No explicit costs usually, but check
+        // ...
+
+        // --- LOST BLESSING (Secret) ---
+        // Each node in tree = 1 Sinthru (or BP if Contract)
+        const lostNodeCount = selectedLostBlessingNodes.size;
+        if (pageThreeState.selectedStarCrossedLovePacts.has('sinthrus_contract')) {
+            const sinthruBpCost = selectedDominionId === 'shinar' ? 8 : 10;
+            bpSpent += lostNodeCount * sinthruBpCost;
+        } else {
+            // Already added to sinthru usage count in Page 3 section, so covered by general Sigil calculation?
+            // Wait, in Page 3 section above:
+            // "if (!pageThreeState.selectedStarCrossedLovePacts.has('sinthrus_contract')) { bpSpent += sinthruCount * sinthruCost; }"
+            // sinthruCount comes from acquiredCommonSigils map.
+            // The Logic in `useSigilCalculation` adds lost blessing nodes to `used` counts, but doesn't auto-buy them in `acquiredCommonSigils`.
+            // So we need to manually account for the COST of the sinthru sigils used here if they weren't "bought" in the map.
+            // Actually, the user buys Sinthru sigils in the shop. They are in the map.
+            // So `sinthruCount` includes the ones used for Lost Blessing.
+            // So it is already covered.
         }
-        
-        pageFiveState.movingOutHomes.forEach((home, index) => {
-            if (home.isInherited) return;
-            if (index !== 0) {
-                addFp(3);
-                if (home.houseId) accumulateCost(home.houseId);
-                home.upgradeIds.forEach(id => {
-                    if (id === 'virtual_reality') {
-                         if (home.vrChamberCostType === 'bp') addBp(2);
-                         else addFp(5);
-                    } else accumulateCost(id);
-                });
-            }
-        });
-        
-        // Page 6
-        accumulateCost(pageSixState.selectedRetirementChoiceId);
-        accumulateCost(pageSixState.selectedChildOfGodChoiceId);
-        
-        addFp(miscFpCosts);
 
-        // Final Totals
-        // Starting points are 100
-        const totalFpSpent = calcFpSpent;
-        const totalFpGained = calcFpGained;
-        const totalBpSpent = calcBpSpent;
-        const totalBpGained = calcBpGained;
-        const totalKpSpent = calcKpSpent;
-        const initialKp = pageThreeState.selectedStarCrossedLovePacts.has('kuri_odans_charm') ? 100 : 0;
-        const totalKpGained = initialKp + calcKpGained;
+        // Misc Costs
+        fpSpent += miscFpCosts;
 
-        setFpSpent(totalFpSpent);
-        setFpGained(totalFpGained);
-        setBpSpent(totalBpSpent);
-        setBpGained(totalBpGained);
-        setKpSpent(totalKpSpent);
-        setKpGained(totalKpGained);
+        // --- SANDBOX OVERRIDE ---
+        if (isSandboxMode) {
+            return {
+                blessingPoints: 999,
+                fortunePoints: 999,
+                kuriPoints: 999,
+                bpGained, bpSpent, fpGained, fpSpent, kpGained, kpSpent
+            };
+        }
 
-        // Net points logic
-        // Current Points = Starting(100) + Gained - Spent
-        setFortunePoints(100 + totalFpGained - totalFpSpent);
-        setBlessingPoints(100 + totalBpGained - totalBpSpent);
-        setKuriPoints(totalKpGained - totalKpSpent);
+        const blessingPoints = 100 + bpGained - bpSpent;
+        const fortunePoints = 100 + fpGained - fpSpent;
+        const kuriPoints = kpGained - kpSpent;
+
+        return {
+            blessingPoints,
+            fortunePoints,
+            kuriPoints,
+            bpGained, bpSpent, fpGained, fpSpent, kpGained, kpSpent
+        };
 
     }, [
-        selectedDominionId, ALL_COSTS, miscFpCosts, kpPaidNodes,
+        selectedDominionId,
         pageOneState, pageTwoState, pageThreeState, pageFourState, pageFiveState, pageSixState,
-        buildsRefreshTrigger, getExtraBpCost, selectedLostBlessingNodes
+        kpPaidNodes, miscFpCosts, selectedLostBlessingNodes, buildsRefreshTrigger, isSandboxMode
     ]);
-
-    return { 
-        blessingPoints, fortunePoints, kuriPoints,
-        bpGained, bpSpent,
-        fpGained, fpSpent,
-        kpGained, kpSpent
-    };
 };

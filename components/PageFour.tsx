@@ -1,400 +1,241 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCharacterContext } from '../context/CharacterContext';
 import { 
     DRYADEA_DATA, DRYADEA_DATA_KO, 
     LIMITLESS_POTENTIAL_DATA, LIMITLESS_POTENTIAL_DATA_KO, 
-    CUSTOM_SPELL_RULES_DATA, CUSTOM_SPELL_RULES_DATA_KO,
+    CUSTOM_SPELL_RULES_DATA, CUSTOM_SPELL_RULES_DATA_KO, 
     LIMITLESS_POTENTIAL_RUNES_DATA, LIMITLESS_POTENTIAL_RUNES_DATA_KO 
 } from '../constants';
-import { BlessingIntro, SectionHeader, SectionSubHeader, CompanionIcon, WeaponIcon, VehicleIcon, renderFormattedText } from './ui';
-import type { CustomSpell, ChoiceItem } from '../types';
+import { SectionHeader, BlessingIntro, renderFormattedText } from './ui';
+import { useLongPress } from '../hooks/useLongPress';
 import { CompanionSelectionModal } from './SigilTreeOptionCard';
 import { BeastSelectionModal } from './BeastSelectionModal';
 import { VehicleSelectionModal } from './VehicleSelectionModal';
 import { WeaponSelectionModal } from './WeaponSelectionModal';
-import { useLongPress } from '../hooks/useLongPress';
+import type { ChoiceItem, CustomSpell } from '../types';
 
-interface RuneCounterProps {
-  ruhaiCount: number;
-  availableMialgrathCount: number;
-  onAction: (runeId: 'ruhai' | 'mialgrath', action: 'buy' | 'sell') => void;
-  language: 'en' | 'ko';
-  runeData: ChoiceItem[];
-}
+const RuneCard: React.FC<{
+    rune: ChoiceItem;
+    count: number;
+    onAction: (action: 'buy' | 'sell') => void;
+    onAnimate: (rect: DOMRect) => void;
+    fontSize?: 'regular' | 'large';
+    language: 'en' | 'ko';
+}> = ({ rune, count, onAction, onAnimate, fontSize = 'regular', language }) => {
+    const imgRef = useRef<HTMLImageElement>(null);
+    
+    const handleBuy = () => {
+        onAction('buy');
+        if (imgRef.current) {
+            onAnimate(imgRef.current.getBoundingClientRect());
+        }
+    };
 
-const RuneCounter: React.FC<RuneCounterProps> = ({ ruhaiCount, availableMialgrathCount, onAction, language, runeData }) => {
-  const ruhaiMeta = runeData.find(r => r.id === 'ruhai')!;
-  const mialgrathMeta = runeData.find(r => r.id === 'mialgrath')!;
+    const handleSell = () => {
+        if (count > 0) onAction('sell');
+    };
 
-  const handleScroll = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only scroll if clicked on the container background, not the items
-    if (e.target === e.currentTarget) {
-        e.preventDefault();
-        document.getElementById('rune-purchase-section')?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+    const longPressProps = useLongPress(
+        (e) => {
+            handleSell();
+            if (navigator.vibrate) navigator.vibrate(50);
+        },
+        (e) => {
+            handleBuy();
+        },
+        { shouldPreventDefault: true, delay: 500 }
+    );
+    
+    const descriptionClass = fontSize === 'large' ? 'text-base' : 'text-sm';
+    const isMialgrath = rune.id === 'mialgrath';
+    const glowColor = isMialgrath ? '#38bdf8' : '#fbbf24'; // Cyan vs Amber
 
-  const createHybridHandler = (id: 'ruhai' | 'mialgrath') => {
-      const handleBuy = () => onAction(id, 'buy');
-      const handleSell = () => onAction(id, 'sell');
-
-      const longPressProps = useLongPress(
-          () => { handleSell(); if (navigator.vibrate) navigator.vibrate(50); },
-          () => { handleBuy(); },
-          { shouldPreventDefault: true, delay: 500 }
-      );
-
-      return {
-          ...longPressProps,
-          onContextMenu: (e: React.MouseEvent) => { e.preventDefault(); handleSell(); }
-      };
-  };
-
-  const ruhaiHandlers = createHybridHandler('ruhai');
-  const mialgrathHandlers = createHybridHandler('mialgrath');
-
-  const headerClass = language === 'ko' 
-      ? "font-cinzel text-lg font-bold text-amber-500 mb-4 text-center tracking-[0.2em] border-b border-amber-900/30 pb-2"
-      : "font-cinzel text-lg text-amber-500 mb-4 text-center tracking-[0.2em] border-b border-amber-900/30 pb-2";
-
-  return (
-    <div
-      className="fixed top-1/2 right-0 -translate-y-1/2 bg-black/80 backdrop-blur-md p-4 rounded-l-xl border-l border-t border-b border-amber-900/50 z-50 group cursor-pointer transition-all hover:border-amber-500/70 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] select-none min-w-[140px]"
-      onClick={handleScroll}
-      role="button"
-      tabIndex={0}
-      aria-label="Scroll to Rune purchase section"
-      title="Scroll to Rune purchase section"
-    >
-      <h4 className={headerClass}>
-          {language === 'ko' ? "룬" : "RUNES"}
-      </h4>
-      <div className="flex flex-col gap-2">
+    return (
         <div 
-            className="flex items-center justify-between gap-3 group/item cursor-pointer hover:bg-white/10 rounded-lg p-2 active:scale-95 transition-all"
-            {...ruhaiHandlers}
+            className="group flex flex-col md:flex-row items-center p-6 bg-black/40 rounded-lg border border-gray-700 hover:border-gray-500 transition-all select-none active:scale-[0.99] cursor-pointer"
+            style={{ boxShadow: `0 0 15px ${glowColor}10` }}
+            {...longPressProps}
+            onContextMenu={(e) => { e.preventDefault(); handleSell(); }}
         >
-          <img src={ruhaiMeta.imageSrc} alt={ruhaiMeta.title} className="w-10 h-10 object-contain drop-shadow-md group-hover/item:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all" />
-          <span className="font-mono text-xl font-bold text-amber-100 w-8 text-center">{ruhaiCount}</span>
+             <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-6 relative">
+                 <img 
+                    ref={imgRef}
+                    src={rune.imageSrc} 
+                    alt={rune.title} 
+                    className="w-32 h-32 object-contain filter drop-shadow-lg transition-transform group-hover:scale-105"
+                 />
+                 <div className="absolute -top-2 -right-2 bg-gray-900 border border-gray-600 rounded-full w-8 h-8 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                     {count}
+                 </div>
+             </div>
+             <div className="flex-grow text-center md:text-left">
+                 <h3 className="font-cinzel text-2xl font-bold text-white mb-2 tracking-wider" style={{ textShadow: `0 0 5px ${glowColor}` }}>{rune.title}</h3>
+                 <p className="text-xs font-bold mb-3 italic" style={{ color: glowColor }}>{rune.cost}</p>
+                 <div className={`${descriptionClass} text-gray-300 leading-relaxed`}>
+                     {renderFormattedText(rune.description)}
+                 </div>
+                  <div className="mt-4 pt-4 border-t border-gray-700/50 flex justify-between items-center text-[10px] text-gray-500 font-mono uppercase">
+                     <span>{language === 'ko' ? "좌클릭: 구매" : "L-Click: Buy"}</span>
+                     <span>{language === 'ko' ? "우클릭: 판매" : "R-Click: Sell"}</span>
+                 </div>
+             </div>
         </div>
-        <div 
-            className="flex items-center justify-between gap-3 group/item cursor-pointer hover:bg-white/10 rounded-lg p-2 active:scale-95 transition-all"
-            {...mialgrathHandlers}
-        >
-          <img src={mialgrathMeta.imageSrc} alt={mialgrathMeta.title} className="w-10 h-10 object-contain drop-shadow-md group-hover/item:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all" />
-          <span className="font-mono text-xl font-bold text-amber-100 w-8 text-center">{availableMialgrathCount}</span>
-        </div>
-      </div>
-      <p className="text-[10px] text-gray-500 text-center mt-3 italic leading-relaxed">
-          {language === 'ko' 
-            ? <>좌클릭/탭: 구매<br/>우클릭/홀드: 판매</> 
-            : <>L-Click/Tap: Buy<br/>R-Click/Hold: Sell</>
-          }
-      </p>
-    </div>
-  );
+    );
 };
 
+const RuneCounter: React.FC<{
+    ruhaiCount: number;
+    availableMialgrathCount: number;
+    onAction: (runeId: 'ruhai' | 'mialgrath', action: 'buy' | 'sell') => void;
+    language: 'en' | 'ko';
+    runeData: ChoiceItem[];
+}> = ({ ruhaiCount, availableMialgrathCount, onAction, language, runeData }) => {
+    
+    // Just a simple visual counter, actions are handled by cards in page
+    // But we can add floating controls if needed. For now, let's keep it informative.
+    
+    return (
+        <div className="fixed top-[35%] right-0 -translate-y-1/2 bg-black/80 backdrop-blur-md p-4 rounded-l-xl border-l border-t border-b border-gray-700 z-[80] shadow-2xl shadow-blue-900/20 flex flex-col gap-4">
+             <div className="text-center border-b border-gray-700 pb-2 mb-1">
+                 <h4 className="font-cinzel text-lg text-blue-300 tracking-widest">{language === 'ko' ? "룬" : "RUNES"}</h4>
+             </div>
+             
+             {/* Ruhai */}
+             <div className="flex items-center gap-3">
+                 <img src={runeData[0].imageSrc} className="w-8 h-8 object-contain" alt="Ruhai" />
+                 <div className="flex flex-col">
+                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{runeData[0].title}</span>
+                     <span className="text-xl font-bold text-amber-400">{ruhaiCount}</span>
+                 </div>
+             </div>
 
-interface RuneCardProps {
-  rune: ChoiceItem;
-  count: number;
-  onAction: (action: 'buy' | 'sell') => void;
-  onAnimate: (rect: DOMRect) => void;
-  fontSize?: 'regular' | 'large';
-  language: 'en' | 'ko';
-}
-
-const RuneCard: React.FC<RuneCardProps> = ({ rune, count, onAction, onAnimate, fontSize, language }) => {
-  const { cost, description, imageSrc, title } = rune;
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  const handleBuy = () => {
-    onAction('buy');
-    if (imgRef.current) {
-      onAnimate(imgRef.current.getBoundingClientRect());
-    }
-  };
-
-  const handleSell = () => {
-      if (count > 0) {
-          onAction('sell');
-      }
-  };
-
-  const longPressProps = useLongPress(
-      () => { handleSell(); if (navigator.vibrate) navigator.vibrate(50); },
-      () => { handleBuy(); },
-      { shouldPreventDefault: true, delay: 500 }
-  );
-
-  const isMialgrath = rune.id === 'mialgrath';
-  const glowColor = isMialgrath ? 'rgba(34, 211, 238, 0.4)' : 'rgba(245, 158, 11, 0.4)';
-  const borderColor = isMialgrath ? 'border-cyan-900/60' : 'border-amber-900/60';
-  const hoverBorderColor = isMialgrath ? 'hover:border-cyan-500/60' : 'hover:border-amber-500/60';
-  const costClasses = isMialgrath ? 'text-cyan-300 border-cyan-900/50 bg-cyan-950/30' : 'text-amber-300 border-amber-900/50 bg-amber-950/30';
-  const ringColor = isMialgrath ? 'group-hover:border-cyan-500/40' : 'group-hover:border-amber-500/40';
-
-  const descriptionClass = fontSize === 'large' ? 'text-base' : 'text-sm';
-  const costTextClass = fontSize === 'large' ? 'text-sm' : 'text-xs';
-
-  return (
-    <div 
-      className={`group relative flex flex-col items-center text-center p-6 transition-all duration-500 ease-in-out bg-black/60 rounded-xl h-full border backdrop-blur-sm ${borderColor} ${hoverBorderColor} cursor-pointer select-none`}
-      {...longPressProps}
-      onContextMenu={(e) => { e.preventDefault(); handleSell(); }}
-      role="button"
-      aria-label={`Buy ${title} (Right click to sell). Current count: ${count}`}
-    >
-      <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-gray-600 group-hover:border-white transition-colors rounded-tl-lg"></div>
-      <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-gray-600 group-hover:border-white transition-colors rounded-tr-lg"></div>
-      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-gray-600 group-hover:border-white transition-colors rounded-bl-lg"></div>
-      <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-gray-600 group-hover:border-white transition-colors rounded-br-lg"></div>
-
-      <div className={`relative w-40 h-40 mb-6 rounded-full border-2 border-dashed border-gray-800 bg-black/40 flex items-center justify-center transition-colors duration-500 ${ringColor}`}>
-        <div className="absolute inset-0 bg-white/5 rounded-full blur-xl scale-75 group-hover:scale-100 transition-transform duration-700 opacity-0 group-hover:opacity-20"></div>
-        <img 
-            ref={imgRef} 
-            src={imageSrc} 
-            alt={title} 
-            className="w-24 h-24 object-contain relative z-10 transform transition-transform duration-500 group-hover:scale-110" 
-            style={{ filter: `drop-shadow(0 0 10px ${glowColor})` }}
-        />
-      </div>
-      
-      <h3 className="font-cinzel text-3xl font-bold mb-3 text-white tracking-[0.2em] group-hover:text-amber-100 transition-colors">{title}</h3>
-      <p className={`${costTextClass} font-mono mb-6 px-4 py-1.5 rounded border ${costClasses}`}>
-          {cost}
-      </p>
-      
-      <div className="border-t border-gray-700/50 pt-4 flex-grow w-full">
-        <p className={`text-gray-400 ${descriptionClass} leading-relaxed whitespace-pre-wrap text-justify font-light`}>{renderFormattedText(description)}</p>
-      </div>
-      
-       <div className="mt-4 w-full pt-4 border-t border-gray-800">
-         <p className="text-[10px] text-gray-600 uppercase tracking-widest font-mono">
-            {language === 'ko' ? "좌클릭/탭: 획득 • 우클릭/홀드: 판매" : "L-Click/Tap: Acquire • R-Click/Hold: Sell"}
-         </p>
-      </div>
-    </div>
-  );
+             {/* Mialgrath */}
+              <div className="flex items-center gap-3">
+                 <img src={runeData[1].imageSrc} className="w-8 h-8 object-contain" alt="Mialgrath" />
+                 <div className="flex flex-col">
+                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{runeData[1].title}</span>
+                     <span className="text-xl font-bold text-cyan-400">{availableMialgrathCount}</span>
+                 </div>
+             </div>
+        </div>
+    );
 };
 
-interface CustomSpellInputProps {
+const CustomSpellInput: React.FC<{
     spell: CustomSpell;
     index: number;
     onDescriptionChange: (id: number, text: string) => void;
     onMialgrathToggle: (id: number) => void;
     onMialgrathDescriptionChange: (id: number, text: string) => void;
     canApplyMialgrath: boolean;
-    onOpenAssignment: (spellId: number, type: 'companion' | 'beast' | 'vehicle' | 'weapon') => void;
-    onClearAssignment: (spellId: number) => void;
+    onOpenAssignment: (id: number, type: 'companion' | 'beast' | 'vehicle' | 'weapon') => void;
+    onClearAssignment: (id: number) => void;
     showKpButton?: boolean;
     onToggleKp?: (id: number, type: 'ruhai' | 'milgrath') => void;
     language: 'en' | 'ko';
     mialgrathImageSrc: string;
-}
-
-const CustomSpellInput: React.FC<CustomSpellInputProps> = ({ 
-    spell, index, onDescriptionChange, onMialgrathToggle, onMialgrathDescriptionChange, canApplyMialgrath, onOpenAssignment, onClearAssignment,
-    showKpButton, onToggleKp, language, mialgrathImageSrc
+}> = ({ 
+    spell, index, onDescriptionChange, onMialgrathToggle, onMialgrathDescriptionChange, 
+    canApplyMialgrath, onOpenAssignment, onClearAssignment, showKpButton, onToggleKp, language, mialgrathImageSrc 
 }) => {
     
-    const isMialgrathToggleDisabled = !spell.mialgrathApplied && !canApplyMialgrath;
-
     return (
-        <div className={`
-            relative overflow-hidden rounded-lg border-2 transition-all duration-500 group
-            ${spell.mialgrathApplied 
-                ? 'border-cyan-500/50 bg-[#0a151a] shadow-[0_0_20px_rgba(34,211,238,0.1)]' 
-                : 'border-amber-900/20 bg-black/60 hover:border-amber-700/40'
-            }
-        `}>
-            {/* Background Texture */}
-            <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+        <div className="bg-black/40 border border-gray-700 rounded-lg p-4 flex flex-col gap-3 relative group">
+             <div className="flex justify-between items-center mb-1">
+                 <div className="flex items-center gap-2">
+                    <span className="font-cinzel text-amber-500 font-bold text-lg">#{index + 1}</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-widest">{language === 'ko' ? "커스텀 주문" : "Custom Spell"}</span>
+                    {spell.isRuhaiKpPaid && (
+                        <span className="bg-pink-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold ml-2">KP</span>
+                    )}
+                 </div>
+                 {showKpButton && onToggleKp && (
+                     <button 
+                        onClick={() => onToggleKp(spell.id, 'ruhai')}
+                        className={`text-[10px] px-2 py-1 rounded border transition-colors ${spell.isRuhaiKpPaid ? 'bg-pink-900/50 border-pink-500 text-pink-200' : 'bg-gray-800 border-gray-600 text-gray-400 hover:text-pink-300'}`}
+                     >
+                         {language === 'ko' ? "KP로 지불" : "Pay with KP"}
+                     </button>
+                 )}
+             </div>
+             
+             <textarea 
+                className="w-full bg-gray-900/50 border border-gray-600 rounded p-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-amber-500 transition-colors resize-none h-24"
+                placeholder={language === 'ko' ? "주문 설명을 입력하세요..." : "Describe your spell..."}
+                value={spell.description}
+                onChange={(e) => onDescriptionChange(spell.id, e.target.value)}
+             />
 
-            {/* Header / Status Bar */}
-            <div className={`
-                flex justify-between items-center px-4 py-2 border-b transition-colors duration-500
-                ${spell.mialgrathApplied ? 'bg-cyan-950/60 border-cyan-500/30' : 'bg-gray-900/60 border-amber-900/20'}
-            `}>
-                <div className="flex items-center gap-3">
-                    <span className={`font-mono text-[10px] tracking-widest uppercase border px-2 py-0.5 rounded ${spell.mialgrathApplied ? 'text-cyan-300 border-cyan-700/50 bg-cyan-900/20' : 'text-amber-600 border-amber-900/30 bg-amber-950/10'}`}>
-                        {spell.mialgrathApplied ? 'MILGRATH_OVERRIDE' : 'RUHAI_STANDARD'}
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    {/* Ruhai KP Button */}
-                    {showKpButton && onToggleKp && (
-                        <button
-                            onClick={() => onToggleKp(spell.id, 'ruhai')}
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
-                                spell.isRuhaiKpPaid 
-                                ? 'bg-pink-600 border-pink-400 text-white shadow-[0_0_8px_rgba(236,72,153,0.5)]' 
-                                : 'bg-transparent border-gray-600 text-gray-500 hover:border-pink-500/50 hover:text-pink-400'
-                            }`}
-                            title="Pay Ruhai cost with Kuri-Odan Points"
+             <div className="flex items-center justify-between border-t border-gray-700/50 pt-3 mt-1">
+                 <div className="flex items-center gap-2">
+                     <button
+                        onClick={() => (canApplyMialgrath || spell.mialgrathApplied) && onMialgrathToggle(spell.id)}
+                        disabled={!canApplyMialgrath && !spell.mialgrathApplied}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+                            spell.mialgrathApplied 
+                            ? 'bg-cyan-900/40 border-cyan-500 text-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.3)]' 
+                            : 'bg-gray-800/50 border-gray-600 text-gray-500 hover:border-cyan-500/50 hover:text-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed'
+                        }`}
+                     >
+                         <img src={mialgrathImageSrc} className="w-4 h-4 object-contain" alt="" />
+                         <span className="text-[10px] font-bold uppercase tracking-wider">{language === 'ko' ? "밀그라스 적용" : "Apply Milgrath"}</span>
+                     </button>
+                     {spell.mialgrathApplied && showKpButton && onToggleKp && (
+                        <button 
+                            onClick={() => onToggleKp(spell.id, 'milgrath')}
+                            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${spell.isMilgrathKpPaid ? 'bg-pink-900/50 border-pink-500 text-pink-200' : 'bg-gray-800 border-gray-600 text-gray-400 hover:text-pink-300'}`}
+                            title="Pay Milgrath cost with KP"
                         >
                             KP
                         </button>
-                    )}
-                    <span className={`font-cinzel text-xl font-bold ${spell.mialgrathApplied ? 'text-cyan-500/30' : 'text-amber-500/20'}`}>
-                        NO. {String(index + 1).padStart(2, '0')}
-                    </span>
-                </div>
-            </div>
-
-            <div className="p-6 relative z-10">
-                {/* Main Description */}
-                <div className="mb-6">
-                    <textarea
-                        id={`ruhai-${spell.id}`}
-                        value={spell.description}
-                        onChange={(e) => onDescriptionChange(spell.id, e.target.value)}
-                        className={`
-                            w-full bg-black/50 border rounded-md p-4 text-gray-300 placeholder-gray-700 
-                            focus:outline-none focus:ring-1 transition-all font-sans leading-relaxed resize-none text-sm
-                            ${spell.mialgrathApplied 
-                                ? 'border-cyan-900/30 focus:border-cyan-500/50 focus:ring-cyan-500/30' 
-                                : 'border-amber-900/30 focus:border-amber-500/50 focus:ring-amber-500/30'
-                            }
-                        `}
-                        placeholder={language === 'ko' ? "주문의 매개변수, 효과, 그리고 제한 사항을 정의하세요..." : "Define spell parameters, manifestations, and limitations..."}
-                        rows={5}
-                    />
-                </div>
-                
-                {/* Mialgrath Section */}
-                <div className={`
-                    rounded-lg border transition-all duration-500 overflow-hidden
-                    ${spell.mialgrathApplied ? 'border-cyan-500/30 bg-cyan-950/20' : 'border-gray-800/50 bg-black/20'}
-                `}>
-                    <div className="flex items-center gap-5 p-4 relative">
-                        {/* Socket Button */}
-                        <button 
-                            onClick={() => onMialgrathToggle(spell.id)}
-                            disabled={isMialgrathToggleDisabled}
-                            className={`
-                                relative w-12 h-12 rounded-lg flex items-center justify-center border transition-all duration-300 flex-shrink-0
-                                ${spell.mialgrathApplied 
-                                    ? 'border-cyan-400 bg-cyan-900/40 shadow-[0_0_15px_rgba(34,211,238,0.3)]' 
-                                    : isMialgrathToggleDisabled 
-                                        ? 'border-gray-800 bg-gray-900/30 cursor-not-allowed opacity-50' 
-                                        : 'border-amber-900/30 bg-black hover:border-amber-500/50 hover:bg-amber-950/20 cursor-pointer'
-                                }
-                            `}
-                            title={spell.mialgrathApplied ? (language === 'ko' ? "밀그라스 룬 제거" : "Remove Milgrath Rune") : (language === 'ko' ? "밀그라스 룬 장착" : "Socket Milgrath Rune")}
-                        >
-                            {spell.mialgrathApplied ? (
-                                <img src={mialgrathImageSrc} alt="Active" className="w-8 h-8 drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" />
-                            ) : (
-                                <div className="w-3 h-3 rounded-full bg-gray-800 shadow-inner"></div>
-                            )}
-                        </button>
-
-                        <div className="flex-grow">
-                            <h5 className={`font-cinzel font-bold text-xs tracking-widest mb-1 ${spell.mialgrathApplied ? 'text-cyan-300' : 'text-gray-500'}`}>
-                                MILGRATH SOCKET
-                            </h5>
-                            <p className="text-[10px] text-gray-500 leading-tight">
-                                {spell.mialgrathApplied 
-                                    ? (language === 'ko' ? "현실 제약이 해제되었습니다." : "Reality constraints bypassed.") 
-                                    : (language === 'ko' ? "제약을 무시하려면 룬을 장착하세요." : "Socket rune to defy standard restrictions.")}
-                            </p>
-                        </div>
-
-                         {/* Milgrath KP Button */}
-                         {showKpButton && spell.mialgrathApplied && onToggleKp && (
-                            <button
-                                onClick={() => onToggleKp(spell.id, 'milgrath')}
-                                className={`absolute right-4 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
-                                    spell.isMilgrathKpPaid 
-                                    ? 'bg-pink-600 border-pink-400 text-white shadow-[0_0_8px_rgba(236,72,153,0.5)]' 
-                                    : 'bg-transparent border-gray-600 text-gray-500 hover:border-pink-500/50 hover:text-pink-400'
-                                }`}
-                                title="Pay Milgrath cost with Kuri-Odan Points"
-                            >
-                                KP
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Mialgrath Content */}
-                    {spell.mialgrathApplied && (
-                        <div className="px-4 pb-4 animate-fade-in space-y-4 border-t border-cyan-900/30 pt-4">
-                            <div>
-                                <label className="block mb-2 text-xs font-bold text-cyan-500 font-cinzel uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full"></span>
-                                    {language === 'ko' ? "재정의 프로토콜" : "Override Protocol"}
-                                </label>
-                                <textarea
-                                    value={spell.mialgrathDescription}
-                                    onChange={(e) => onMialgrathDescriptionChange(spell.id, e.target.value)}
-                                    className="w-full bg-black/40 border border-cyan-900/30 rounded p-3 text-cyan-100/90 placeholder-cyan-900/40 focus:outline-none focus:border-cyan-500/40 text-sm transition-colors resize-none font-sans leading-relaxed"
-                                    placeholder={language === 'ko' ? "규칙을 깨뜨리는 효과를 서술하세요..." : "Describe rule-breaking effects..."}
-                                    rows={5}
-                                />
-                            </div>
-                            
-                            <div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <label className="text-[10px] font-bold text-cyan-500 uppercase tracking-widest flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full"></span>
-                                        {language === 'ko' ? "구조물 결합" : "Construct Binding"}
-                                    </label>
-                                    <span className="text-[9px] text-cyan-500/60 font-mono border border-cyan-900/50 px-1.5 py-0.5 rounded bg-cyan-950/30">100 PTS MAX</span>
-                                </div>
-
-                                {spell.assignedEntityName ? (
-                                    <div className="flex items-center justify-between bg-cyan-900/10 border border-cyan-500/30 rounded p-2 group hover:border-cyan-400/50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 flex items-center justify-center bg-cyan-950/50 rounded text-cyan-400 border border-cyan-800">
-                                                {spell.assignedEntityType === 'companion' && <CompanionIcon />}
-                                                {spell.assignedEntityType === 'beast' && <CompanionIcon />}
-                                                {spell.assignedEntityType === 'vehicle' && <VehicleIcon />}
-                                                {spell.assignedEntityType === 'weapon' && <WeaponIcon />}
-                                            </div>
-                                            <div>
-                                                <p className="text-[9px] text-cyan-600 uppercase tracking-wider font-bold">{spell.assignedEntityType}</p>
-                                                <p className="text-xs text-cyan-200 font-bold">{spell.assignedEntityName}</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => onClearAssignment(spell.id)}
-                                            className="text-cyan-500 hover:text-cyan-200 text-[10px] px-2 py-1 rounded hover:bg-cyan-900/30 transition-colors border border-transparent hover:border-cyan-800"
-                                        >
-                                            {language === 'ko' ? "해제" : "UNBIND"}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {[
-                                            { type: 'companion', icon: <CompanionIcon />, label: language === 'ko' ? '동료' : 'Comp' },
-                                            { type: 'beast', icon: <CompanionIcon />, label: language === 'ko' ? '동물' : 'Beast' },
-                                            { type: 'vehicle', icon: <VehicleIcon />, label: language === 'ko' ? '탈것' : 'Vehicle' },
-                                            { type: 'weapon', icon: <WeaponIcon />, label: language === 'ko' ? '무기' : 'Weapon' },
-                                        ].map((item) => (
-                                            <button
-                                                key={item.type}
-                                                onClick={() => onOpenAssignment(spell.id, item.type as any)}
-                                                className="flex flex-col items-center gap-1.5 p-2 rounded border border-gray-800 bg-gray-900/40 hover:bg-cyan-950/40 hover:border-cyan-700/50 hover:text-cyan-300 text-gray-600 transition-all group"
-                                            >
-                                                <div className="scale-75 group-hover:scale-90 transition-transform">{item.icon}</div>
-                                                <span className="text-[9px] uppercase font-bold tracking-tight">{item.label}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
+                     )}
+                 </div>
+                 
+                 {/* Assignments Dropdown */}
+                 {spell.mialgrathApplied && (
+                     <div className="relative group/assign">
+                         <button className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 transition-colors">
+                             {spell.assignedEntityName ? (
+                                 <span className="text-green-400 font-bold">{spell.assignedEntityName}</span>
+                             ) : (
+                                 <span>{language === 'ko' ? "할당..." : "Assign..."}</span>
+                             )}
+                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                         </button>
+                         
+                         <div className="absolute bottom-full right-0 mb-2 w-32 bg-gray-900 border border-gray-600 rounded shadow-xl hidden group-hover/assign:block z-20">
+                             {['companion', 'beast', 'vehicle', 'weapon'].map(type => (
+                                 <button 
+                                    key={type}
+                                    onClick={() => onOpenAssignment(spell.id, type as any)}
+                                    className="w-full text-left px-3 py-2 text-[10px] text-gray-300 hover:bg-gray-800 hover:text-white uppercase tracking-wider first:rounded-t last:rounded-b"
+                                 >
+                                     {language === 'ko' ? (type === 'companion' ? '동료' : type === 'beast' ? '동물' : type === 'vehicle' ? '탈것' : '무기') : type}
+                                 </button>
+                             ))}
+                             <div className="border-t border-gray-700"></div>
+                             <button onClick={() => onClearAssignment(spell.id)} className="w-full text-left px-3 py-2 text-[10px] text-red-400 hover:bg-red-900/20 uppercase tracking-wider rounded-b">
+                                 {language === 'ko' ? "해제" : "Clear"}
+                             </button>
+                         </div>
+                     </div>
+                 )}
+             </div>
+             
+             {spell.mialgrathApplied && (
+                 <div className="mt-2 animate-fade-in">
+                     <textarea 
+                        className="w-full bg-cyan-950/20 border border-cyan-800/50 rounded p-2 text-xs text-cyan-100 placeholder-cyan-800/50 focus:outline-none focus:border-cyan-500 transition-colors resize-none h-16"
+                        placeholder={language === 'ko' ? "밀그라스 효과 설명..." : "Describe Milgrath override effect..."}
+                        value={spell.mialgrathDescription}
+                        onChange={(e) => onMialgrathDescriptionChange(spell.id, e.target.value)}
+                     />
+                 </div>
+             )}
         </div>
     );
-};
-
+}
 
 export const PageFour: React.FC = () => {
     const { 
@@ -412,7 +253,8 @@ export const PageFour: React.FC = () => {
         handleToggleKp,
         language,
         isOptimizationMode,
-        isSimplifiedUiMode
+        isSimplifiedUiMode,
+        totalRunes // New prop
     } = useCharacterContext();
 
     const activeDrysdeaData = language === 'ko' ? DRYADEA_DATA_KO : DRYADEA_DATA;
@@ -475,7 +317,8 @@ export const PageFour: React.FC = () => {
         return spell?.assignedEntityName || null;
     };
 
-    const totalRuhaiCount = acquiredRunes.get('ruhai') ?? 0;
+    // Use totalRunes for display counts to reflect Sandbox bonuses
+    const totalRuhaiCount = totalRunes.get('ruhai') ?? 0;
     const usedRuhaiCount = customSpells.filter(s => s.description.trim().length > 0).length;
     const availableRuhaiCount = Math.max(0, totalRuhaiCount - usedRuhaiCount);
 

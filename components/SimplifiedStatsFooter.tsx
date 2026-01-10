@@ -8,7 +8,8 @@ export const SimplifiedStatsFooter: React.FC = () => {
         fortunePoints, 
         kuriPoints, 
         availableSigilCounts,
-        acquiredRunes,
+        // Use totalRunes from context for display
+        totalRunes,
         customSpells,
         language
     } = useCharacterContext();
@@ -16,10 +17,11 @@ export const SimplifiedStatsFooter: React.FC = () => {
     const isKo = language === 'ko';
 
     // Helper logic from PageFour to calculate remaining Runes
+    // Using totalRunes allows sandbox 99 bonus to appear here
     const usedRuhaiCount = customSpells.filter(s => s.description.trim().length > 0).length;
-    const availableRuhai = Math.max(0, (acquiredRunes.get('ruhai') || 0) - usedRuhaiCount);
+    const availableRuhai = Math.max(0, (totalRunes.get('ruhai') || 0) - usedRuhaiCount);
     const mialgrathRunesApplied = customSpells.filter(s => s.mialgrathApplied).length;
-    const availableMialgrath = Math.max(0, (acquiredRunes.get('mialgrath') || 0) - mialgrathRunesApplied);
+    const availableMialgrath = Math.max(0, (totalRunes.get('mialgrath') || 0) - mialgrathRunesApplied);
 
     // Filter to only show sigils/runes that have remaining count > 0
     const sigilItems = [

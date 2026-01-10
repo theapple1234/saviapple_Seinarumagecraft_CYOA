@@ -40,6 +40,10 @@ export interface ICharacterContext extends
   toggleKpNode: (nodeId: string, sigilType: string) => void;
   availableSigilCounts: SigilCounts;
   totalSigilCounts: SigilCounts;
+  
+  // New: Computed Runes for Sandbox
+  totalRunes: Map<'ruhai' | 'mialgrath', number>;
+
   isReferencePageOpen: boolean;
   openReferencePage: () => void;
   closeReferencePage: () => void;
@@ -67,6 +71,10 @@ export interface ICharacterContext extends
   // UI Preferences
   isSimplifiedUiMode: boolean;
   setSimplifiedUiMode: (enabled: boolean) => void;
+
+  // Sandbox Mode
+  isSandboxMode: boolean;
+  enableSandboxMode: () => void;
 
   // Lost Blessing
   selectedLostBlessingNodes: Set<string>;

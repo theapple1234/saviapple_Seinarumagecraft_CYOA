@@ -2,6 +2,7 @@
 import React from 'react';
 import * as Constants from '../../constants';
 import { renderFormattedText } from '../ui';
+import { useCharacterContext } from '../../context/CharacterContext';
 
 export const formatCostDisplay = (cost: string | undefined, language: 'en' | 'ko') => {
     if (!cost) return null;
@@ -66,6 +67,7 @@ export const TemplateIcon = () => (
 );
 
 export const SummaryHeader: React.FC<{ theme: 'dark' | 'light' | 'cyber', language?: 'en' | 'ko' }> = ({ theme, language = 'en' }) => {
+    // We access context but we removed isSandboxMode usage from UI
     const isKo = language === 'ko';
     const titleDefault = isKo ? "성스러운 마법소녀 CYOA" : "SEINARU MAGECRAFT GIRLS";
     const titleCyber = isKo ? "성스러운_마법소녀_CYOA" : "SEINARU_MAGECRAFT_GIRLS";
@@ -75,7 +77,9 @@ export const SummaryHeader: React.FC<{ theme: 'dark' | 'light' | 'cyber', langua
          return (
             <div className="border-b border-green-500/50 pb-4 mb-8 flex justify-between items-end">
                 <div>
-                    <h1 className={`build-summary-title ${isKo ? 'text-4xl' : 'text-3xl'} font-bold tracking-tighter text-green-500 font-galmuri leading-[2.5]`}>{titleCyber}</h1>
+                    <h1 className={`build-summary-title ${isKo ? 'text-4xl' : 'text-3xl'} font-bold tracking-tighter text-green-500 font-galmuri leading-[2.5]`}>
+                        {titleCyber}
+                    </h1>
                     <p className="text-[10px] text-green-700 font-galmuri mt-1 uppercase tracking-widest leading-[2.5]">Original by NXTUB | Interactive by SAVIAPPLE</p>
                 </div>
             </div>

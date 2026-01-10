@@ -118,7 +118,8 @@ const AppContent: React.FC = () => {
       language,
       isIntroDone,
       isPageTwoIntroDone,
-      isSimplifiedUiMode
+      isSimplifiedUiMode,
+      enableSandboxMode
   } = useCharacterContext();
 
   useEffect(() => {
@@ -138,6 +139,31 @@ const AppContent: React.FC = () => {
         window.removeEventListener('keydown', handleKeyDown);
     };
   }, [toggleSettings]);
+
+  // Konami Code Listener (Rolling Buffer)
+  useEffect(() => {
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let buffer: string[] = [];
+
+    const handleKeydown = (e: KeyboardEvent) => {
+      // Normalize single letter keys to lowercase to support Caps Lock or Shift
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      
+      buffer.push(key);
+      if (buffer.length > konamiCode.length) {
+        buffer.shift();
+      }
+
+      // Check if current buffer matches sequence
+      if (buffer.length === konamiCode.length && buffer.every((val, index) => val === konamiCode[index])) {
+        enableSandboxMode();
+        buffer = []; // Reset after activation
+      }
+    };
+
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  }, [enableSandboxMode]);
 
   useEffect(() => {
     const handleSecretNavigation = () => {
