@@ -112,6 +112,7 @@ export const SettingsModal: React.FC = () => {
         language, setLanguage,
         isPhotosensitivityDisabled, setPhotosensitivityDisabled,
         isOptimizationMode, setOptimizationMode,
+        isSimplifiedUiMode, setSimplifiedUiMode,
         fontSize, setFontSize,
         volume, setVolume,
         bgmVideoId, setBgmVideoId,
@@ -355,12 +356,19 @@ export const SettingsModal: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Photosensitivity - Horizontal Compact */}
-                <div className="bg-black/20 p-3 rounded-lg border border-white/5 flex items-center justify-between">
-                    <span className="text-gray-300 text-xs font-bold">
-                        {language === 'en' ? 'Reduced Motion' : '광과민성 보호'}
-                    </span>
-                    <ToggleSwitch checked={isPhotosensitivityDisabled} onChange={() => setPhotosensitivityDisabled(!isPhotosensitivityDisabled)} />
+                {/* Simplified UI Mode */}
+                <div className="bg-black/20 p-3 rounded-lg border border-white/5 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                         <span className="text-gray-300 text-xs font-bold">
+                            {language === 'en' ? 'Simplified UI' : '간단한 UI'}
+                        </span>
+                        <ToggleSwitch checked={isSimplifiedUiMode} onChange={() => setSimplifiedUiMode(!isSimplifiedUiMode)} />
+                    </div>
+                    <p className="text-[10px] text-gray-500">
+                        {language === 'en' 
+                            ? 'Replaces floating counters with a static bottom bar for better mobile experience.' 
+                            : '모바일 환경을 위해 떠다니는 카운터들을 하단 고정 바로 대체합니다.'}
+                    </p>
                 </div>
             </div>
 
@@ -435,7 +443,7 @@ export const SettingsModal: React.FC = () => {
     );
 
     const renderMisc = () => (
-        <div className="space-y-6 animate-fade-in-up">
+        <div className="space-y-6 animate-fade-in-up pb-12">
             {/* Master Volume */}
             <div className="bg-black/20 p-5 rounded-xl border border-white/5">
                 <div className="flex justify-between items-center mb-4">
@@ -489,6 +497,14 @@ export const SettingsModal: React.FC = () => {
                 <p className="text-[10px] text-gray-500">
                     {language === 'en' ? 'Reduces visual effects and animations for better performance.' : '성능 향상을 위해 시각 효과를 줄입니다.'}
                 </p>
+            </div>
+            
+            {/* Photosensitivity - Moved Here */}
+            <div className="bg-black/20 p-3 rounded-lg border border-white/5 flex items-center justify-between">
+                <span className="text-gray-300 text-xs font-bold">
+                    {language === 'en' ? 'Reduced Motion' : '광과민성 보호'}
+                </span>
+                <ToggleSwitch checked={isPhotosensitivityDisabled} onChange={() => setPhotosensitivityDisabled(!isPhotosensitivityDisabled)} />
             </div>
         </div>
     );
@@ -619,7 +635,7 @@ export const SettingsModal: React.FC = () => {
             <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileChange} />
             <div 
                 className={`
-                    w-full max-w-4xl h-[600px] md:h-[500px] bg-[#0b0f17] border border-cyan-500/20 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col md:flex-row relative
+                    w-full max-w-4xl h-[610px] md:h-[610px] bg-[#0b0f17] border border-cyan-500/20 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col md:flex-row relative
                     ${isSettingsOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'} transition-all duration-300
                 `}
             >

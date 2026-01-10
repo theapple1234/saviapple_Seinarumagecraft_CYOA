@@ -3,7 +3,9 @@ import React from 'react';
 import { useCharacterContext } from '../context/CharacterContext';
 
 export const StatsFooter: React.FC = () => {
-  const { blessingPoints, fortunePoints, kuriPoints, selectedStarCrossedLovePacts, language, isIntroDone } = useCharacterContext();
+  const { blessingPoints, fortunePoints, kuriPoints, selectedStarCrossedLovePacts, language, isIntroDone, isSimplifiedUiMode } = useCharacterContext();
+
+  if (isSimplifiedUiMode) return null;
 
   // Check if the specific pact is active to show KP
   const showKp = selectedStarCrossedLovePacts?.has('kuri_odans_charm');

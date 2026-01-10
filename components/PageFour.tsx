@@ -411,7 +411,8 @@ export const PageFour: React.FC = () => {
         selectedStarCrossedLovePacts,
         handleToggleKp,
         language,
-        isOptimizationMode
+        isOptimizationMode,
+        isSimplifiedUiMode
     } = useCharacterContext();
 
     const activeDrysdeaData = language === 'ko' ? DRYADEA_DATA_KO : DRYADEA_DATA;
@@ -502,13 +503,17 @@ export const PageFour: React.FC = () => {
                     }}
                 />
             ))}
-            <RuneCounter 
-                ruhaiCount={availableRuhaiCount} 
-                availableMialgrathCount={availableMialgrathCount} 
-                onAction={handleRuneAction}
-                language={language}
-                runeData={activeRunesData}
-            />
+            
+            {/* Standard Rune Counter - Hidden if Simplified UI is ON */}
+            {!isSimplifiedUiMode && (
+                <RuneCounter 
+                    ruhaiCount={availableRuhaiCount} 
+                    availableMialgrathCount={availableMialgrathCount} 
+                    onAction={handleRuneAction}
+                    language={language}
+                    runeData={activeRunesData}
+                />
+            )}
 
             <BlessingIntro {...activeDrysdeaData} />
             <BlessingIntro {...activeLimitlessData} reverse />

@@ -49,6 +49,7 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     // Settings State
     const [isPhotosensitivityDisabled, setPhotosensitivityDisabled] = useState(false);
     const [isOptimizationMode, setOptimizationMode] = useState(false);
+    const [isSimplifiedUiMode, setSimplifiedUiMode] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     
     // Initialize language based on browser preference
@@ -410,7 +411,7 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     const contextPartial = {
         selectedDominionId, miscFpCosts, kpPaidNodes, selectedLostBlessingNodes, selectedLostPowers,
         backupLostBlessingNodes, backupLostPowers, // Include backups in partial for persistence
-        volume, bgmVideoId, language, fontSize, isOptimizationMode,
+        volume, bgmVideoId, language, fontSize, isOptimizationMode, isSimplifiedUiMode,
         addDebugLog, 
         ...pageOneState, ...pageTwoState, ...pageThreeState, ...pageFourState, ...pageFiveState, ...pageSixState
     };
@@ -419,7 +420,7 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
         setSelectedDominionId, setMiscFpCosts, setKpPaidNodes, setSelectedLostBlessingNodes, setSelectedLostPowers,
         setBackupLostBlessingNodes, setBackupLostPowers, // Include setters for backups
         setVolume, setBgmVideoId, setLanguage, setFontSize,
-        setOptimizationMode // Add to setters
+        setOptimizationMode, setSimplifiedUiMode
     };
 
     const { serializeState, loadState } = usePersistence(contextPartial as any, setters);
@@ -471,6 +472,8 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
       setPhotosensitivityDisabled,
       isOptimizationMode,
       setOptimizationMode,
+      isSimplifiedUiMode,
+      setSimplifiedUiMode,
       selectedLostBlessingNodes,
       toggleLostBlessingNode,
       selectedLostPowers,

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { CharacterProvider, useCharacterContext } from './context/CharacterContext';
 import { StatsFooter } from './components/StatsFooter';
+import { SimplifiedStatsFooter } from './components/SimplifiedStatsFooter';
 import { SectionHeader } from './components/ui';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundMusic } from './components/BackgroundMusic';
@@ -116,7 +117,8 @@ const AppContent: React.FC = () => {
       handleLekoluJobAction,
       language,
       isIntroDone,
-      isPageTwoIntroDone
+      isPageTwoIntroDone,
+      isSimplifiedUiMode
   } = useCharacterContext();
 
   useEffect(() => {
@@ -227,7 +229,7 @@ const AppContent: React.FC = () => {
   }
 
   // Button Themes
-  const referenceButtonClass = "fixed bottom-12 right-8 z-[51] group";
+  const referenceButtonClass = "fixed right-8 z-[51] transition-all duration-1000 ease-out delay-[900ms]";
   const innerButtonClass = "relative px-5 py-3 font-cinzel text-lg font-bold tracking-wider rounded-xl transition-all duration-300 flex items-center gap-3 border-2 overflow-hidden shadow-2xl";
   
   // High contrast colors (Solid backgrounds, bright text)
@@ -235,10 +237,28 @@ const AppContent: React.FC = () => {
   const secretTheme = "bg-red-950 text-white border-red-500 hover:bg-red-900 hover:border-red-400 hover:shadow-red-500/20";
   const currentTheme = currentPage === 7 ? secretTheme : normalTheme;
 
-  const ReferenceButton = () => (
+  const ReferenceButton = () => {
+    // Determine opacity/position based on intro state
+    const visibleClass = isIntroDone ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10 pointer-events-none';
+    
+    // If simplified UI is active, render the compact, icon-only button
+    if (isSimplifiedUiMode) {
+        return (
+            <button
+                onClick={openReferencePage}
+                className={`${referenceButtonClass} bottom-20 p-3 bg-black/60 border border-cyan-500/30 rounded-full hover:bg-slate-800 hover:border-cyan-400 text-cyan-500/70 hover:text-cyan-200 backdrop-blur-sm shadow-lg hover:shadow-cyan-500/20 group ${visibleClass}`}
+                title={language === 'ko' ? "참고 페이지 열기" : "Open Reference Page"}
+            >
+                <BookIcon />
+            </button>
+        );
+    }
+
+    // Default Full Button
+    return (
       <button
         onClick={openReferencePage}
-        className={`${referenceButtonClass} transition-all duration-1000 ease-out delay-[900ms] ${isIntroDone ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10 pointer-events-none'}`}
+        className={`${referenceButtonClass} bottom-12 group ${visibleClass}`}
         title={language === 'ko' ? "참고 페이지 열기" : "Open Reference Page"}
       >
           <div className={`${innerButtonClass} ${currentTheme}`}>
@@ -261,7 +281,8 @@ const AppContent: React.FC = () => {
               </div>
           </div>
       </button>
-  );
+    );
+  };
 
   // If secret page is active, render only that
   if (currentPage === 7) {
@@ -281,15 +302,22 @@ const AppContent: React.FC = () => {
               {/* Overlays for Secret Page - Fade in control */}
               <div className={`transition-opacity duration-1000 ease-in-out ${areSecretOverlaysVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                   <ScrollButtons />
-                  <SigilCounter 
-                    counts={availableSigilCounts} 
-                    onAction={handleCommonSigilAction} 
-                    selectedSpecialSigilChoices={selectedSpecialSigilChoices}
-                    onSpecialSigilChoice={handleSpecialSigilChoice}
-                    acquiredLekoluJobs={acquiredLekoluJobs}
-                    onLekoluJobAction={handleLekoluJobAction}
-                  />
-                  <StatsFooter />
+                  {/* Hide SigilCounter and StatsFooter if simplified UI is enabled */}
+                  {!isSimplifiedUiMode && (
+                      <>
+                        <SigilCounter 
+                            counts={availableSigilCounts} 
+                            onAction={handleCommonSigilAction} 
+                            selectedSpecialSigilChoices={selectedSpecialSigilChoices}
+                            onSpecialSigilChoice={handleSpecialSigilChoice}
+                            acquiredLekoluJobs={acquiredLekoluJobs}
+                            onLekoluJobAction={handleLekoluJobAction}
+                        />
+                        <StatsFooter />
+                      </>
+                  )}
+                  {isSimplifiedUiMode && <SimplifiedStatsFooter />}
+                  
                   <ReferenceButton />
               </div>
           </>
@@ -313,7 +341,7 @@ const AppContent: React.FC = () => {
       {isBuildSummaryOpen && <BuildSummaryPage onClose={closeBuildSummary} />}
       <SettingsModal />
       <GlobalNotification />
-      <div className="min-h-screen text-white font-sans relative">
+      <div className={`min-h-screen text-white font-sans relative ${isSimplifiedUiMode ? 'pb-16' : ''}`}>
         <div className="container mx-auto px-4 py-8 relative pb-20 z-10">
           {/* Header Image: Only render if image exists for current page AND intro conditions are met */}
           {currentHeaderImage && (
@@ -335,9 +363,10 @@ const AppContent: React.FC = () => {
           </ErrorBoundary>
           
         </div>
-        <StatsFooter />
+        {!isSimplifiedUiMode && <StatsFooter />}
       </div>
       
+      {isSimplifiedUiMode && <SimplifiedStatsFooter />}
       <ReferenceButton />
       <ScrollButtons />
     </>

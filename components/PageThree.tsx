@@ -33,7 +33,8 @@ export const PageThree: React.FC = () => {
         availableSigilCounts,
         fontSize,
         language,
-        isOptimizationMode
+        isOptimizationMode,
+        isSimplifiedUiMode
     } = useCharacterContext();
 
     const [fallingSigils, setFallingSigils] = React.useState<Array<{
@@ -89,14 +90,18 @@ export const PageThree: React.FC = () => {
                     }}
                 />
             ))}
-            <SigilCounter 
-                counts={availableSigilCounts} 
-                onAction={handleCommonSigilAction} 
-                selectedSpecialSigilChoices={selectedSpecialSigilChoices}
-                onSpecialSigilChoice={handleSpecialSigilChoice}
-                acquiredLekoluJobs={acquiredLekoluJobs}
-                onLekoluJobAction={handleLekoluJobAction}
-            />
+            
+            {/* Standard Sigil Counter - Hidden if Simplified UI is ON */}
+            {!isSimplifiedUiMode && (
+                <SigilCounter 
+                    counts={availableSigilCounts} 
+                    onAction={handleCommonSigilAction} 
+                    selectedSpecialSigilChoices={selectedSpecialSigilChoices}
+                    onSpecialSigilChoice={handleSpecialSigilChoice}
+                    acquiredLekoluJobs={acquiredLekoluJobs}
+                    onLekoluJobAction={handleLekoluJobAction}
+                />
+            )}
 
             <section className="mb-24">
                 <SectionHeader>{activeIntroData.title}</SectionHeader>

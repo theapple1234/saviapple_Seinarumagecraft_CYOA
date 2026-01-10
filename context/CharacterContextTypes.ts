@@ -63,6 +63,10 @@ export interface ICharacterContext extends
   // Optimization
   isOptimizationMode: boolean;
   setOptimizationMode: (enabled: boolean) => void;
+  
+  // UI Preferences
+  isSimplifiedUiMode: boolean;
+  setSimplifiedUiMode: (enabled: boolean) => void;
 
   // Lost Blessing
   selectedLostBlessingNodes: Set<string>;

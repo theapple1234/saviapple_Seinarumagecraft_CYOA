@@ -84,8 +84,10 @@ export const SigilCounter: React.FC<SigilCounterProps> = ({
     acquiredLekoluJobs,
     onLekoluJobAction
 }) => {
-  const { language } = useCharacterContext();
+  const { language, isSimplifiedUiMode } = useCharacterContext();
   const [activeSpecialSigil, setActiveSpecialSigil] = useState<string | null>(null);
+
+  if (isSimplifiedUiMode) return null;
 
   const isKo = language === 'ko';
   
@@ -156,10 +158,6 @@ export const SigilCounter: React.FC<SigilCounterProps> = ({
                               onSpecialSigilChoice(activeSpecialSigil, option.id);
                           }
                       }
-                      
-                      // Using simple onClick/onContextMenu for the popover items as they are distinct enough
-                      // But could wrap in useLongPress if needed. Sticking to simple for popover items for now to keep code clean
-                      // unless specifically requested. The main sigil list was the primary target.
                       
                       return (
                           <div 
