@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useRef, useMemo } from 'react';
 import { DOMINIONS } from '../constants';
 import { usePageOneState } from '../hooks/usePageOneState';
@@ -116,10 +115,12 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     // Calculate Total Runes (including Sandbox bonus)
     const totalRunes = useMemo(() => {
-        const map = new Map(pageFourState.acquiredRunes);
+        const map = new Map<'ruhai' | 'mialgrath', number>(pageFourState.acquiredRunes);
         if (isSandboxMode) {
-             map.set('ruhai', (map.get('ruhai') || 0) + 99);
-             map.set('mialgrath', (map.get('mialgrath') || 0) + 99);
+             const currentRuhai = map.get('ruhai');
+             const currentMialgrath = map.get('mialgrath');
+             map.set('ruhai', (typeof currentRuhai === 'number' ? currentRuhai : 0) + 99);
+             map.set('mialgrath', (typeof currentMialgrath === 'number' ? currentMialgrath : 0) + 99);
         }
         return map;
     }, [pageFourState.acquiredRunes, isSandboxMode]);
@@ -229,7 +230,7 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     useEffect(() => {
         const root = document.documentElement;
         if (fontSize === 'large') {
-            root.style.fontSize = '125%'; 
+            root.style.fontSize = '120%'; 
         } else {
             root.style.fontSize = '90%';
         }

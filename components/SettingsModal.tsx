@@ -113,7 +113,6 @@ export const SettingsModal: React.FC = () => {
         isPhotosensitivityDisabled, setPhotosensitivityDisabled,
         isOptimizationMode, setOptimizationMode,
         isSimplifiedUiMode, setSimplifiedUiMode,
-        fontSize, setFontSize,
         volume, setVolume,
         bgmVideoId, setBgmVideoId,
         serializeState,
@@ -334,7 +333,7 @@ export const SettingsModal: React.FC = () => {
                     {language === 'en' ? 'Interface Settings' : '인터페이스 설정'}
                 </h4>
                 
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="mb-3">
                     {/* Language - Compact */}
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5 flex flex-col justify-between">
                         <label className="text-gray-300 text-xs font-bold mb-2">{language === 'en' ? 'Language' : '언어'}</label>
@@ -342,16 +341,6 @@ export const SettingsModal: React.FC = () => {
                             options={[{value: 'en', label: 'Eng'}, {value: 'ko', label: '한국어'}]}
                             value={language}
                             onChange={setLanguage}
-                        />
-                    </div>
-
-                    {/* Font Size - Compact */}
-                    <div className="bg-black/20 p-3 rounded-lg border border-white/5 flex flex-col justify-between">
-                        <label className="text-gray-300 text-xs font-bold mb-2">{language === 'en' ? 'Font Size' : '글자 크기'}</label>
-                        <SegmentedControl 
-                            options={[{value: 'regular', label: 'REG'}, {value: 'large', label: 'LRG'}]}
-                            value={fontSize}
-                            onChange={setFontSize}
                         />
                     </div>
                 </div>
