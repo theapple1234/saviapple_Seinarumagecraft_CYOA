@@ -1,4 +1,4 @@
-
+import { Analytics } from "@vercel/analytics/react"
 import React, { useState, useEffect, Suspense } from 'react';
 import { CharacterProvider, useCharacterContext } from './context/CharacterContext';
 import { StatsFooter } from './components/StatsFooter';
@@ -443,6 +443,7 @@ const App: React.FC = () => {
   return (
     <CharacterProvider>
       <MainApp />
+      <Analytics />
     </CharacterProvider>
   );
 };
