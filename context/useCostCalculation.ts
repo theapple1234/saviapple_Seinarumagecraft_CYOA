@@ -408,31 +408,99 @@ export const useCostCalculation = ({
         }
         
         // --- ENGRAVING COSTS & REFUNDS ---
-        const processEngraving = (
-            override: string | null,
-            isActive: boolean,
-            hasJuathas: boolean
-        ) => {
-            if (!isActive) return;
-            const engraving = override ?? pageThreeState.selectedBlessingEngraving;
-            
+        // Refactored Logic:
+        // 1. New Weapon Assignment = 5 FP. Reusing existing weapon name = 0 FP.
+        // 2. Juathas Sigil present on Weapon Engraving = -1 BP.
+
+        const paidWeaponNames = new Set<string>();
+
+        const blessingStates = [
+            {
+                id: 'compellingWill',
+                override: pageThreeState.compellingWillEngraving,
+                isActive: pageThreeState.selectedCompellingWillSigils.size > 0,
+                hasJuathas: pageThreeState.selectedCompellingWillSigils.has('manipulator'),
+                weaponName: pageThreeState.compellingWillWeaponName
+            },
+            {
+                id: 'worldlyWisdom',
+                override: pageThreeState.worldlyWisdomEngraving,
+                isActive: pageThreeState.selectedWorldlyWisdomSigils.size > 0,
+                hasJuathas: pageThreeState.selectedWorldlyWisdomSigils.has('arborealist'),
+                weaponName: pageThreeState.worldlyWisdomWeaponName
+            },
+            {
+                id: 'bitterDissatisfaction',
+                override: pageThreeState.bitterDissatisfactionEngraving,
+                isActive: pageThreeState.selectedBitterDissatisfactionSigils.size > 0,
+                hasJuathas: pageThreeState.selectedBitterDissatisfactionSigils.has('fireborn'),
+                weaponName: pageThreeState.bitterDissatisfactionWeaponName
+            },
+            {
+                id: 'lostHope',
+                override: pageThreeState.lostHopeEngraving,
+                isActive: pageThreeState.selectedLostHopeSigils.size > 0,
+                hasJuathas: pageThreeState.selectedLostHopeSigils.has('young_witch'),
+                weaponName: pageThreeState.lostHopeWeaponName
+            },
+            {
+                id: 'fallenPeace',
+                override: pageThreeState.fallenPeaceEngraving,
+                isActive: pageThreeState.selectedFallenPeaceSigils.size > 0,
+                hasJuathas: pageThreeState.selectedFallenPeaceSigils.has('left_brained'),
+                weaponName: pageThreeState.fallenPeaceWeaponName
+            },
+            {
+                id: 'graciousDefeat',
+                override: pageThreeState.graciousDefeatEngraving,
+                isActive: pageThreeState.selectedGraciousDefeatSigils.size > 0,
+                hasJuathas: pageThreeState.selectedGraciousDefeatSigils.has('gd_fireborn'),
+                weaponName: pageThreeState.graciousDefeatWeaponName
+            },
+            {
+                id: 'closedCircuits',
+                override: pageThreeState.closedCircuitsEngraving,
+                isActive: pageThreeState.selectedClosedCircuitsSigils.size > 0,
+                hasJuathas: pageThreeState.selectedClosedCircuitsSigils.has('script_kiddy'),
+                weaponName: pageThreeState.closedCircuitsWeaponName
+            },
+            {
+                id: 'righteousCreation',
+                override: pageThreeState.righteousCreationEngraving,
+                isActive: pageThreeState.selectedRighteousCreationSigils.size > 0,
+                hasJuathas: pageThreeState.selectedRighteousCreationSigils.has('rookie_engineer'),
+                weaponName: pageThreeState.righteousCreationWeaponName
+            },
+            // Good Tidings is excluded because it cannot be engraved on a weapon
+        ];
+
+        // Process standard Engravings (Skin, Clothes, Weapon)
+        // We handle Weapon differently now based on unique names, but Skin/Clothes are 0 cost so no special handling needed there.
+        // We iterate through all blessings to check if they are set to weapon.
+        
+        blessingStates.forEach(b => {
+            if (!b.isActive) return;
+            const engraving = b.override ?? pageThreeState.selectedBlessingEngraving;
+
             if (engraving === 'weapon') {
-                fpSpent += 5;
-                if (hasJuathas) {
+                // Cost Logic: Only charge 5 FP if this weapon name hasn't been charged yet
+                if (b.weaponName) {
+                    const normName = b.weaponName.trim();
+                    if (!paidWeaponNames.has(normName)) {
+                        fpSpent += 5;
+                        paidWeaponNames.add(normName);
+                    }
+                } else {
+                    // Unnamed/Unassigned weapon state (shouldn't happen with proper UI validation, but charge to be safe)
+                    fpSpent += 5;
+                }
+
+                // Refund Logic: Juathas grants 1 BP refund
+                if (b.hasJuathas) {
                     bpSpent -= 1;
                 }
             }
-        };
-
-        processEngraving(pageThreeState.goodTidingsEngraving, !!pageThreeState.selectedGoodTidingsTier, false);
-        processEngraving(pageThreeState.compellingWillEngraving, pageThreeState.selectedCompellingWillSigils.size > 0, pageThreeState.selectedCompellingWillSigils.has('manipulator'));
-        processEngraving(pageThreeState.worldlyWisdomEngraving, pageThreeState.selectedWorldlyWisdomSigils.size > 0, pageThreeState.selectedWorldlyWisdomSigils.has('arborealist'));
-        processEngraving(pageThreeState.bitterDissatisfactionEngraving, pageThreeState.selectedBitterDissatisfactionSigils.size > 0, pageThreeState.selectedBitterDissatisfactionSigils.has('fireborn'));
-        processEngraving(pageThreeState.lostHopeEngraving, pageThreeState.selectedLostHopeSigils.size > 0, pageThreeState.selectedLostHopeSigils.has('young_witch'));
-        processEngraving(pageThreeState.fallenPeaceEngraving, pageThreeState.selectedFallenPeaceSigils.size > 0, pageThreeState.selectedFallenPeaceSigils.has('left_brained'));
-        processEngraving(pageThreeState.graciousDefeatEngraving, pageThreeState.selectedGraciousDefeatSigils.size > 0, pageThreeState.selectedGraciousDefeatSigils.has('gd_fireborn'));
-        processEngraving(pageThreeState.closedCircuitsEngraving, pageThreeState.selectedClosedCircuitsSigils.size > 0, pageThreeState.selectedClosedCircuitsSigils.has('script_kiddy'));
-        processEngraving(pageThreeState.righteousCreationEngraving, pageThreeState.selectedRighteousCreationSigils.size > 0, pageThreeState.selectedRighteousCreationSigils.has('rookie_engineer'));
+        });
 
         // --- PAGE 4 ---
         // Runes

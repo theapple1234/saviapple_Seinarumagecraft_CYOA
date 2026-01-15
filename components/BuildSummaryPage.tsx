@@ -325,7 +325,13 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 useCORS: true,
                 scale: 2,
                 logging: false,
-                windowWidth: captureWidth, 
+                windowWidth: captureWidth,
+                ignoreElements: (element: Element) => {
+                    if (typeof element.className === 'string' && element.className.includes('bg-[url')) {
+                        return true;
+                    }
+                    return false;
+                },
                 onclone: (clonedDoc: Document) => {
                     const clonedElement = clonedDoc.querySelector('[data-capture-target]') as HTMLElement;
                     if (clonedElement) {
@@ -426,6 +432,12 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                  scale: 2,
                                  logging: false,
                                  windowWidth: refWidth,
+                                 ignoreElements: (element: Element) => {
+                                    if (typeof element.className === 'string' && element.className.includes('bg-[url')) {
+                                        return true;
+                                    }
+                                    return false;
+                                },
                                  onclone: (clonedDoc: Document) => {
                                      const clonedNode = clonedDoc.querySelector(`[data-name="${refName}"]`) as HTMLElement;
                                      if (clonedNode) {
@@ -739,7 +751,7 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                                                     <p className="text-[10px] text-gray-500 font-mono mt-0.5">{new Date(slot.timestamp).toLocaleString()}</p>
                                                 </>
                                             ) : (
-                                                <p className="text-xs text-gray-600 italic group-hover:text-gray-400">{ctx.language === 'en' ? 'Empty Slot' : '빈 슬롯'}</p>
+                                                <p className="text-xs text-gray-600 italic group-hover:text-gray-500">{ctx.language === 'en' ? 'Empty Slot' : '빈 슬롯'}</p>
                                             )}
                                         </div>
                                         {isOccupied && (
