@@ -328,6 +328,28 @@ export const BuildSummaryPage: React.FC<{ onClose: () => void }> = ({ onClose })
                 windowWidth: captureWidth, 
                 onclone: (clonedDoc: Document) => {
                     const clonedElement = clonedDoc.querySelector('[data-capture-target]') as HTMLElement;
+                    
+                    // ================= [수정 시작] =================
+                    // 1. 그라데이션이 포함된 요소들을 찾아서 배경을 제거하거나 단색으로 변경
+                    // Tailwind의 bg-[radial-gradient...] 클래스를 가진 요소들을 타겟팅합니다.
+                    const gradientElements = clonedDoc.querySelectorAll('[class*="radial-gradient"]');
+                    
+                    gradientElements.forEach((el: any) => {
+                        // 그라데이션 이미지 제거
+                        el.style.backgroundImage = 'none';
+                        // 필요한 경우 배경색을 투명 혹은 검정으로 설정 (Vortex/Arcane 배경색에 맞춤)
+                        el.style.backgroundColor = 'transparent'; 
+                    });
+
+                    // 2. 혹시 인라인 스타일로 들어가 있을 경우를 대비해 div 전체 검사 (안전장치)
+                    const allDivs = clonedDoc.querySelectorAll('div');
+                    allDivs.forEach((div: any) => {
+                        const bgImage = div.style.backgroundImage || window.getComputedStyle(div).backgroundImage;
+                        if (bgImage && bgImage.includes('gradient')) {
+                            div.style.backgroundImage = 'none';
+                        }
+                    });
+                    // ================= [수정 끝] =================
                     if (clonedElement) {
                         clonedElement.style.overflow = 'visible';
                         clonedElement.style.height = 'auto';
