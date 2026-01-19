@@ -687,7 +687,7 @@ export const CompanionSection: React.FC<{
                                 type="text" 
                                 value={urlInput}
                                 onChange={(e) => setUrlInput(e.target.value)}
-                                placeholder={language === 'ko' ? "이미지 주소 (URL) 입력..." : "Paste Image URL..."}
+                                placeholder={language === 'ko' ? "https://i.ibb.co/example.jpg" : "https://i.ibb.co/example.jpg"}
                                 className="flex-grow bg-black/40 border border-gray-700 text-gray-300 text-xs px-3 py-2 rounded focus:border-cyan-500 focus:outline-none"
                             />
                             <button 
@@ -709,10 +709,10 @@ export const CompanionSection: React.FC<{
                             </p>
                             <div className="flex justify-center gap-4 text-[10px] font-mono">
                                 <span className="text-green-500/70">
-                                    {language === 'ko' ? "권장: imgbb" : "Good: imgbb"}
+                                    {language === 'ko' ? "권장: imgbb 등" : "Recommended: imgbb, etc."}
                                 </span>
                                 <span className="text-red-500/70">
-                                    {language === 'ko' ? "비권장: imgur" : "Bad: imgur"}
+                                    {language === 'ko' ? "비권장: imgur 등" : "Avoid: imgur, etc."}
                                 </span>
                             </div>
                         </div>
